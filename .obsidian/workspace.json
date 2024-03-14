@@ -1,0 +1,158 @@
+{
+  "main": {
+    "id": "383c2d61b5f7e609",
+    "type": "split",
+    "children": [
+      {
+        "id": "1f1cfff73b39fcfb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c2d8632bfac48026",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Computer Security Fundmentals.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e53cb1237bac7867",
+    "type": "split",
+    "children": [
+      {
+        "id": "6e6386506ef9d00a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1940e4c448e24ef9",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "42333c1e98e8da35",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "7a7954100978e921",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "a980314c07eaa8f2",
+    "type": "split",
+    "children": [
+      {
+        "id": "fdc5a613161f3f82",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "450b27e56a85ce0d",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Computer Security Fundmentals.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "4b415df405336d13",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Computer Security Fundmentals.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "44e008bc6984d590",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "56a084e06fa1dfd2",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Computer Security Fundmentals.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false
+    }
+  },
+  "active": "c2d8632bfac48026",
+  "lastOpenFiles": [
+    "Computer Security.md",
+    "c++之gcc简明教程.md",
+    "中华史纲.md",
+    "未命名",
+    "Effective STL.md",
+    "编程修养.md",
+    "信号与线性系统分析.md"
+  ]
+}
