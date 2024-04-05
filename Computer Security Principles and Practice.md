@@ -92,7 +92,7 @@ NIST 计算机安全手册对计算机安全 (computer security) 的定义如下
 
 ### 1.2.1 威胁与攻击
 
-![威胁后果与其威胁动作](./image/Computer Security Principles and Practice.assets/威胁后果与其威胁动作.png)
+![威胁后果与其威胁动作](./image/Computer%20Security%20Principles%20and%20Practice.assets/威胁后果与其威胁动作.png)
 
 ### 1.2.2 威胁与资产
 
@@ -283,7 +283,7 @@ FIPS 200定义
 
 ### 3.1.1 数字用户认证模型
 
-![NIST SP 800-63-3电子认证结构模型](./image/Computer Security Principles and Practice.assets/NIST SP 800-63-3电子认证结构模型.png)
+![NIST SP 800-63-3电子认证结构模型](.%2Fimage%2FComputer%20Security%20Principles%20and%20Practice.assets%2FNIST%20SP%20800-63-3%E7%94%B5%E5%AD%90%E8%AE%A4%E8%AF%81%E7%BB%93%E6%9E%84%E6%A8%A1%E5%9E%8B.png)
 
 ### 3.1.2 认证方法
 

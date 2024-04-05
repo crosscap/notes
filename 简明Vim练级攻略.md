@@ -1,4 +1,4 @@
-# 简明 Vim 练级攻略
+# 简明Vim练级攻略
 
 ## 建议
 
@@ -93,7 +93,7 @@
 
 先恭喜你！你干的很不错。我们可以开始一些更为有趣的事了。在第三级，我们只谈那些和vi可以兼容的命令。
 
-##### 更好
+### 更好
 
 下面，让我们看一下vim是怎么重复自己的：
 
@@ -108,7 +108,7 @@
 > - `.` → 重复上一个命令—— 100 “desu “.
 > - `3.` → 重复 3 次 “desu” (注意：不是 300，你看，VIM多聪明啊).
 
-##### 更强
+### 更强
 
 你要让你的光标移动更有效率，你一定要了解下面的这些命令，**千万别跳过**。
 
@@ -127,7 +127,7 @@
     >
     > 如果你认为单词是由blank字符分隔符，那么你需要使用大写的E和W。（陈皓注：程序语句）
 
-![word_moves](./image/简明 Vim 练级攻略.assets/word_moves.jpg)
+![word_moves](image\简明Vim练级攻略.assets\word_moves.jpg)
 
 下面，让我来说说最强的光标移动：
 
@@ -136,7 +136,7 @@
 
 相信我，上面这三个命令对程序员来说是相当强大的。
 
-##### 更快
+### 更快
 
 你一定要记住光标的移动，因为很多命令都可以和这些移动光标的命令连动。很多命令都可以如下来干：
 
@@ -168,7 +168,7 @@
 
 你只需要掌握前面的命令，你就可以很舒服的使用VIM了。但是，现在，我们向你介绍的是VIM杀手级的功能。下面这些功能是我只用vim的原因。
 
-##### 在当前行上移动光标: `0` `^` `$` `f` `F` `t` `T` `,` `;`
+### 在当前行上移动光标: `0` `^` `$` `f` `F` `t` `T` `,` `;`
 
 > - `0` → 到行头
 > - `^` → 到本行的第一个非blank字符
@@ -179,11 +179,11 @@
 > - `3fa` → 在当前行查找第三个出现的a。
 > - `F` 和 `T` → 和 `f` 和 `t` 一样，只不过是相反方向。
 
-![Line moves](.\image\简明 Vim 练级攻略.assets\line_moves.jpg)
+![Line moves](.\image\简明Vim练级攻略.assets\line_moves.jpg)
 
 还有一个很有用的命令是 `dt"` → 删除所有的内容，直到遇到双引号—— `"。`
 
-##### 区域选择 `<action>a<object>` 或 `<action>i<object>`
+### 区域选择 `<action>a<object>` 或 `<action>i<object>`
 
 在visual 模式下，这些命令很强大，其命令格式为
 
@@ -203,9 +203,9 @@
 > - `v2i)` → 会选择 `map (+) ("foo")`
 > - `v2a)` → 会选择 `(map (+) ("foo"))`
 
-![Text objects selection](.\image\简明 Vim 练级攻略.assets\textobjects.png)
+![Text objects selection](.\image\简明Vim练级攻略.assets\textobjects.png)
 
-##### 块操作: `<C-v>`
+### 块操作: `<C-v>`
 
 块操作，典型的操作： `0 <C-v> <C-d> I-- [ESC]`
 
@@ -214,17 +214,17 @@
 - `<C-d>` → 向下移动 (你也可以使用hjkl来移动光标，或是使用%，或是别的)
 - `I-- [ESC]` → I是插入，插入“`--`”，按ESC键来为每一行生效。
 
-![Rectangular blocks](.\image\简明 Vim 练级攻略.assets\rectangular-blocks.gif)
+![Rectangular blocks](.\image\简明Vim练级攻略.assets\rectangular-blocks.gif)
 
 在Windows下的vim，你需要使用 `<C-q>` 而不是 `<C-v>` ，`<C-v>` 是拷贝剪贴板。
 
-##### 自动提示： `<C-n>` 和 `<C-p>`
+### 自动提示： `<C-n>` 和 `<C-p>`
 
 在 Insert 模式下，你可以输入一个词的开头，然后按 `<C-p>`或是`<C-n>`，自动补齐功能就出现了……
 
-![Completion](.\image\简明 Vim 练级攻略.assets\completion.gif)
+![Completion](.\image\简明Vim练级攻略.assets\completion.gif)
 
-##### 宏录制： `qa` 操作序列 `q`, `@a`, `@@`
+### 宏录制： `qa` 操作序列 `q`, `@a`, `@@`
 
 - `qa` 把你的操作记录在寄存器 `a。`
 - 于是 `@a` 会replay被录制的宏。
@@ -249,9 +249,9 @@
 >
 > - 现在做 `100@@` 会创建新的100行，并把数据增加到 103.
 
-![Macros](.\image\简明 Vim 练级攻略.assets\macros.gif)
+![Macros](.\image\简明Vim练级攻略.assets\macros.gif)
 
-##### 可视化选择： `v`,`V`,`<C-v>`
+### 可视化选择： `v`,`V`,`<C-v>`
 
 前面，我们看到了 `<C-v>`的示例 （在Windows下应该是`<C-q>`），我们可以使用 `v` 和 `V`。一但被选好了，你可以做下面的事：
 
@@ -259,7 +259,7 @@
 - `<` 或 `>` → 左右缩进
 - `=` → 自动给缩进 （陈皓注：这个功能相当强大，我太喜欢了）
 
-![Autoindent](.\image\简明 Vim 练级攻略.assets\autoindent.gif)
+![Autoindent](.\image\简明Vim练级攻略.assets\autoindent.gif)
 
 在所有被选择的行后加上点东西：
 
@@ -268,9 +268,9 @@
 - `$` 到行最后
 - `A`, 输入字符串，按 `ESC。`
 
-![Append to many lines](.\image\简明 Vim 练级攻略.assets\append-to-many-lines.gif)
+![Append to many lines](.\image\简明Vim练级攻略.assets\append-to-many-lines.gif)
 
-##### 分屏: `:split` 和 `vsplit`
+### 分屏: `:split` 和 `vsplit`
 
 下面是主要的命令，你可以使用VIM的帮助 `:help split`. 你可以参考本站以前的一篇文章[VIM分屏](https://coolshell.cn/articles/1679.html)。
 
@@ -279,7 +279,7 @@
 > - `<C-w>_` (或 `<C-w>|`) : 最大化尺寸 (`<C-w>|` 垂直分屏)
 > - `<C-w>+` (或 `<C-w>-`) : 增加尺寸
 
-![Split](.\image\简明 Vim 练级攻略.assets\split.gif)
+![Split](image\简明Vim练级攻略.assets\split.gif)
 
 #### 结束语
 
@@ -288,7 +288,7 @@
 - 在两到三周后，你会感到vim的强大的。
 - 有时候，学习VIM就像是在死背一些东西。
 - 幸运的是，vim有很多很不错的工具和优秀的文档。
-- 运行vimtutor直到你熟悉了那些基本命令。
+- 运行 vimtutor 直到你熟悉了那些基本命令。
 - 其在线帮助文档中你应该要仔细阅读的是 `:help usr_02.txt`.
 - 你会学习到诸如 `!，` 目录，寄存器，插件等很多其它的功能。
 
