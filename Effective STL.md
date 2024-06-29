@@ -86,3 +86,51 @@
 你需要使迭代器、指针和引用变为无效的次数最少吗？
 
 如果序列容器的迭代器是随机访问类型，而且只要没有删除操作发生，且插入操作只发生在容器的末尾，则指向数据的指针和引用就不会变为无效，这样的容器是否对你有帮助？
+
+### 第2条：不要试图编写独立于容器类型的代码
+
+这些限制的根源在于，对不同类型的序列容器，使迭代器、指针和引用无效（invalidate）的规则是不同的。
+
+考虑到有时候不可避免地要从一种容器类型转到另一种，你可以使用常规的方式来实现这种转变：使用封装（encapsulation）技术。最简单的方式是通过对容器类型和其迭代器类型使用类型定义（typedef）。
+
+所以，不要这么写：
+
+```cpp
+class Widget { };
+
+vector<Widget> vw;
+Widget bestWidget;
+
+vector<Widget>::iterator i = find(vw.begin(), vw.end(), bestWidget);
+```
+
+而应该这么写：
+
+```cpp
+class Widget { };
+typedef vector<Widget> WidgetContainer;
+typedef WidgetContainer::iterator WCIterator;
+
+widgetContainer cw;
+widget bestWidget;
+
+WCIterator i = find(cw.begin(), cw.end(), bestWidget);
+```
+
+这样就使得改变容器类型要容易得多，尤其当这种改变仅仅是增加一个自定义的分配子时，就显得更为方便。
+
+```cpp
+class Widget { };
+template <typename T> SpecialAllocator { };
+typedef vector<Widget, SpecialAllocator<Widget>> WidgetContainer;
+typedef WidgetContainer::iterator WCIterator;
+
+widgetContainer cw;
+widget bestWidget;
+
+WCIterator i = find(cw.begin(), cw.end(), bestWidget);
+```
+
+类型定义只不过是其他类型的别名，所以它带来的封装纯粹是词法（lexical）上的。
+
+要想减少在替换容器类型时所需要修改的代码，你可以把容器隐藏到一个类中，并尽量减少那些通过类接口（而使外部）可见的、与容器相关的信息。
