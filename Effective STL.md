@@ -198,3 +198,73 @@ empty对所有的标准容器都是常数时间操作，而对一些list实现�
 使用 istream_iterator 和区间构造函数时，注意到这一点是有益的。
 
 更好的方式是在对data的声明中避免使用匿名的 istream_iterator 对象，而是给这些迭代器一个名称。
+
+### 第7条：如果容器中包含了通过new操作创建的指针，切记在容器对象析构前将指针delete掉
+
+可以像下面的代码一样delete容器中的指针：
+
+```cpp
+for (vector<Widget*>::iterator i = v.begin(); i != v.end(); ++i)
+{
+    delete *i;
+}
+```
+
+for循环delete每一个指针存在的问题
+
+1. 新的for循环做的事情和for_each相同，但不如使用for_each看起来那么清楚
+2. 不是异常安全的
+
+为了把类似for_each的循环变成真的使用for_each，你需要把delete变成一个函数对象,例如DeleteObject类。
+
+```cpp
+template <typename T> class DeleteObject
+    : public unary_function<T, void>
+{
+public:
+    void operator()(const T* ptr) const
+    {
+        delete ptr;
+    }
+};
+```
+
+从而提供如下的写法:
+
+```cpp
+for_each(v.begin(), v.end(), DeleteObject<Widget>());
+```
+
+通过让编译器推断出传给DeleteObject::operator()的指针的类型，我们可以消除和虚析构函数相关的问题。我们所要做的只是把模板化从DeleteObject移到它的operator()中：
+
+```cpp
+struct DeleteObject
+{
+    template <typename T> void operator()(const T* ptr) const
+    {
+        delete ptr;
+    }
+};
+```
+
+这种类型推断的缺点是我们舍弃了使DeleteObject可配接（adaptable）的能力。考虑到DeleteObject的设计初衷（用于for_each），很难想象这是一个问题。
+
+新的for_each的调用方式：
+
+```cpp
+for_each(v.begin(), v.end(), DeleteObject());
+```
+
+但它仍然不是异常安全的。可以用多种方式来解决这一问题，但最简单的方式可能是用智能指针容器代替指针容器。
+
+使用Boost的shared_ptr（shared_ptr目前已经是C++11的标准库的一部分），本条款最初的例子可改写为：
+
+```cpp
+typedef std::shared_ptr<Widget> SharedWidgetPtr;
+vector<SharedWidgetPtr> v;
+for (int i = 0; i < n; ++i) {
+    v.push_back(SharedWidgetPtr(new Widget));
+}
+```
+
+你所要记住的是：STL容器很智能，但没有智能到知道是否该删除自己所包含的指针的程度。当你使用指针的容器，而其中的指针应该被删除时，为了避免资源泄漏，你必须或者用引用计数形式的智能指针对象（比如shared_ptr）代替指针，或者当容器被析构时手工删除其中的每个指针。
