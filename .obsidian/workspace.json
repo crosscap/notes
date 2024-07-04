@@ -4,16 +4,16 @@
     "type": "split",
     "children": [
       {
-        "id": "39af0d54084ad295",
+        "id": "1e54f25c4d54e055",
         "type": "tabs",
         "children": [
           {
-            "id": "71e98844bbbd429e",
+            "id": "40bfa4c6c4384669",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "大话数据结构.md",
+                "file": "Effective STL.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "大话数据结构.md",
+                "file": "Effective STL.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "大话数据结构.md",
+                "file": "Effective STL.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "大话数据结构.md"
+                "file": "Effective STL.md"
               }
             }
           }
@@ -145,12 +145,13 @@
       "command-palette:打开命令面板": false
     }
   },
-  "active": "71e98844bbbd429e",
+  "active": "40bfa4c6c4384669",
   "lastOpenFiles": [
+    "Effective STL.md",
+    "大话数据结构.md",
     "Computer Security Principles and Practice.md",
     "简明 Vim 练级攻略.md",
     "image/Computer.md",
-    "Effective STL.md",
     "c++之gcc简明教程.md",
     "Computer Security Fundmentals.md",
     "Computer Security.md",
