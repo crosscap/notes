@@ -401,7 +401,8 @@ rebind模板的完整代码如下：
 
 ```cpp
 template<typename T>
-class allocator {
+class allocator
+{
 public:
     // rebind 模板
     template<typename U>
@@ -417,7 +418,8 @@ public:
 
 ```cpp
 template<typename T>
-class allocator {
+class allocator
+{
 public:
     typedef T* pointer;
     typedef const T* const_pointer;
@@ -433,3 +435,111 @@ public:
     };
 };
 ```
+
+### 第11条：理解自定义分配子的合理用法
+
+#### 为什么要自定义分配子
+
+- 经过测试发现STL默认的内存管理器（即allocator\<T\>）太慢，或者浪费内存，或者导致了太多的内存碎片
+- allocator<T>是线程安全的，你的程序不需要
+- 某些容器中的对象通常是一起使用的，想把它们放在一个特殊堆中的相邻位置上，以便尽可能地做到引用局部化
+- 建立一个与共享内存相对应的特殊的堆，然后在这块内存中存放一个或多个容器
+
+#### 共享内存
+
+有一些特殊过程，它们采用malloc和free内存模型来管理一个位于共享内存的堆：
+
+```cpp
+void* mallocShared(size_t bytes) {
+    return malloc(bytes);
+}
+
+void freeShared(void* ptr) {
+    free(ptr);
+}
+```
+
+把STL容器的内容放到这块共享内存中去
+
+```cpp
+template<typename T>
+class SharedMemoryAllocator
+{
+public:
+    pointer allocate(size_type n)
+    {
+        return static_cast<pointer>(mallocShared(n * sizeof(T)));
+    }
+
+    void deallocate(pointer p, size_type n)
+    {
+        freeShared(p);
+    }
+};
+```
+
+可以通过以下方式来使用这个分配子：
+
+```cpp
+typedef vector<double, SharedMemoryAllocator<double>> SharedDoubleVec;
+
+SharedDoubleVec v;
+```
+
+此时，v 中的元素将被放到共享内存中。但 v 本身并不在共享内存中。如果希望 v 也在共享内存中，需要像下面这样做：
+
+```cpp
+void *pVecMemory = mallocShared(sizeof(SharedDoubleVec));
+SharedDoubleVec *pv = new(pVecMemory) SharedDoubleVec;
+...
+pv->~SharedDoubleVec();
+freeShared(pVecMemory);
+```
+
+除非你有充分的理由，否则，建议避免这种手工的“分配／构造／析构／释放”（allocate/construct/destroy/deallocate）四步曲。
+
+#### 元素聚集
+
+假设有两个堆，分别为类Heap1和类Heap2。
+
+```cpp
+class Heap1
+{
+public:
+    static void* allocate(size_t bytes, const void* memoryBlockToBeNear = 0);
+    static void deallocate(void* ptr);
+};
+
+class Heap2 { }; // 与Heap1类似
+```
+
+分配子可以使用像Heap1和Heap2这样的类来完成实际的内存分配和释放操作。
+
+```cpp
+template<typename T, typename Heap>
+class SpecificHeapAllocator
+{
+public:
+    pointer allocate(size_type numObjects, const void* locallyHint = 0)
+    {
+        return static_cast<pointer>(Heap::allocate(n * sizeof(T), locallyHint));
+    }
+
+    void deallocate(pointer p, size_type n)
+    {
+        Heap::deallocate(p);
+    }
+};
+```
+
+使用 SpecificHeapAllocator 进行元素聚集：
+
+```cpp
+vector<int, SpecificHeapAllocator<int, Heap1>> v;
+set<int, SpecificHeapAllocator<int, Heap1>> s;
+
+list<int, SpecificHeapAllocator<int, Heap2>> l;
+map<int, string, less<int>, SpecificHeapAllocator<pair<const int, string>, Heap2>> m;
+```
+
+在这个例子中，很重要的一点是，Heap1和Heap2都是类型而不是对象。否则它们将不会是等价的分配子，违反分配子的等价性限制。
