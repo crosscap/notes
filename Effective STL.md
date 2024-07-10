@@ -543,3 +543,63 @@ map<int, string, less<int>, SpecificHeapAllocator<pair<const int, string>, Heap2
 ```
 
 在这个例子中，很重要的一点是，Heap1和Heap2都是类型而不是对象。否则它们将不会是等价的分配子，违反分配子的等价性限制。
+
+### 第12条：切勿对STL容器的线程安全性有不切实际的依赖
+
+对STL的线程安全性的第一个期望应该是，它会随不同实现而异。
+
+对一个STL实现最多只能期望：
+
+- **多个线程读是安全的**。多个线程可以同时读同一个容器的内容，并且保证是正确的。自然地，在读的过程中，不能对容器有任何写入操作。
+- **多个线程对不同的容器做写入操作是安全的**。多个线程可以同时对不同的容器做写入操作。
+
+库无法实现完全的容器线程安全性，必须手工做同步控制，例如：
+
+```cpp
+vector<int> v;
+...
+getMutexFor(v);
+vector<int>::iterator i = find(v.begin(), v.end(), 42);
+if (i != v.end()) {
+    *i = 0;
+}
+releaseMutexFor(v);
+```
+
+另一个更为面向对象的方案是创建一个Lock类，它在构造函数中获得一个互斥体，例如：
+
+```cpp
+template<typename Container>
+class Lock
+{
+public:
+    Lock(const Container& container) : c(container)
+    {
+        getMutexFor(c);
+    }
+    ~Lock()
+    {
+        releaseMutexFor(c);
+    }
+
+private:
+    const Container& c;
+};
+```
+
+使用类（如Lock）来管理资源的生存期的思想通常被称为“获得资源时即初始化”，其使用方法如下：
+
+```cpp
+vector<int> v;
+...
+Lock<vector<int>> lock(v);
+vector<int>::iterator i = find(v.begin(), v.end(), 42);
+if (i != v.end()) {
+    *i = 0;
+}
+```
+
+这样的使用方法会带来如下好处：
+
+- 如果我们忘了为Lock创建新的代码块，则互斥体仍然会被释放，只不过会晚一些
+- 基于Lock的方案在有异常发生时也是强壮的
