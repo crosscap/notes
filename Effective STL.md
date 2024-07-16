@@ -36,7 +36,7 @@
 - $O(logN)$: 对数时间
 - $O(N)$: 线性时间
 
-## 第1章　容器
+## 第1章 容器
 
 ### 第1条: 慎重选择容器类型
 
@@ -604,7 +604,7 @@ if (i != v.end()) {
 - 如果我们忘了为Lock创建新的代码块, 则互斥体仍然会被释放, 只不过会晚一些
 - 基于Lock的方案在有异常发生时也是强壮的
 
-## 第2章　vector和string
+## 第2章 vector和string
 
 ### 第13条: vector和string优先于动态分配的数组
 
@@ -669,9 +669,104 @@ vector和string是功能完全的STL序列容器, 所以, 凡是适合于序列�
 
 不同的string实现的主要区别在于:
 
-- string的值可能会被引用计数，也可能不会
+- string的值可能会被引用计数, 也可能不会
 - string对象大小的范围可以是一个 char* 指针的大小的1倍到7倍
 - 创建一个新的字符串值可能需要零次、一次或两次动态分配内存
-- string对象可能共享，也可能不共享其大小和容量信息
-- string可能支持，也可能不支持针对单个对象的分配子
+- string对象可能共享, 也可能不共享其大小和容量信息
+- string可能支持, 也可能不支持针对单个对象的分配子
 - 不同的实现对字符内存的最小分配单位有不同的策略
+
+### 第16条: 了解如何把vector和string数据传给旧的API
+
+如果有一个vector v, 而且需要得到一个指向v中数据的指针, 从而可把v中的数据作为数组来对待, 那么只需使用&v[0]. 对于string s, 对应的形式是s.c_str().
+
+为防止传给旧API的指针为空, 应当按如下方式处理:
+
+```cpp
+void doSomething(const int* pInts, size_t numInts);
+
+vector<int> v;
+
+if (!v.empty()) {
+    doSomething(&v[0], v.size());
+}
+```
+
+不要使用v.begin()来代替&v[0], 因为begin的返回值是一个迭代器, 不是指针; 当你需要一个指向vector中的数据的指针时, 你永远不应该使用begin.
+
+以上方式对于vector是适用的, 但对于string却是不可靠的, 因为:
+
+- string中的数据不一定存储在连续的内存中
+- string的内部表示不一定是以空字符结尾的
+
+对于string, 应当使用c_str()来得到一个指向其数据的指针:
+
+```cpp
+void doSomething(const char* pString);
+
+string s;
+
+doSomething(s.c_str());
+```
+
+即使字符串长度为0, c_str()也会返回一个指向空字符的指针. 对字符串内部有空字符的情况也是可以的, 但doSomething会把内部的第一个空字符当作结尾的空字符.
+
+vector或string的数据被传递给一个要读取, 而不是改写这些数据的API. 对于string, 这也是唯一所能做的. 对于vector, C API改变了v中元素值的话, 通常是没有问题的, 但被调用的例程不能试图改变vector中元素的个数. 同时要注意, 有些vector对它们的数据有额外的限制, 如果把vector传递给一个将改变该vector中数据的API, 必须保证这些额外的限制还能被满足。
+
+如果你想用来自C API中的元素初始化一个vector, 可以向API传入该vector中元素的存储区域:
+
+```cpp
+size_t fillArray(double* pArray, size_t arraySize);
+vector<double> vd(maxNumDoubles);
+vd.resize(fillArray(&vd[0], vd.size()));
+```
+
+这一技术只对vector有效, 因为只有vector才保证和数组有同样的内存布局. 如果你想用来自C API中的数据初始化一个string, 只要让API把数据放到一个vector\<char\>中, 然后把数据从该vector复制到相应字符串中:
+
+```cpp
+size_t fillString(char* pArray, size_t arraySize);
+vector<char> vc(maxNumChars);
+size_t charWritten = fillArray(&vc[0], vc.size());
+string s(vc.begin(), vc.begin() + charWritten);
+```
+
+先让C API把数据写入到一个vector中, 然后把数据复制到期望最终写入的STL容器中, 这一思想总是可行的
+
+### 第17条: 使用"swap技巧"除去多余的容量
+
+从vector中去除多余的容量的方法:
+
+```cpp
+class Widget { };
+vector<Widget> v;
+...
+vector<Widget>(v).swap(v);
+```
+
+同样的技巧对string也适用
+
+```cpp
+string s;
+...
+string(s).swap(s);
+```
+
+在做swap的时候, 不仅两个容器的内容被交换, 同时它们的迭代器、指针和引用也将被交换 (string除外).
+
+### 第18条: 避免使用vector\<bool\>
+
+一个STL容器, vector\<bool\>只有两点不对
+
+1. 它不是一个容器
+2. 它不存储bool值
+
+vector\<bool\>是一个假的容器, 它并不真的储存bool, 相反, 为了节省空间, 它储存的是bool的紧凑表示, vector\<bool\> 无法通过如下代码, 导致其不属于STL容器:
+
+```cpp
+vector<bool> vb;
+bool* pb = &vb[0];
+```
+
+需要vector\<bool\>时，应该使用deque\<bool\>或者bitset\<N\>来代替.
+
+## 第3章 关联容器
