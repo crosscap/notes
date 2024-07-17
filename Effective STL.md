@@ -767,6 +767,21 @@ vector<bool> vb;
 bool* pb = &vb[0];
 ```
 
-需要vector\<bool\>时，应该使用deque\<bool\>或者bitset\<N\>来代替.
+需要vector\<bool\>时, 应该使用deque\<bool\>或者bitset\<N\>来代替.
 
 ## 第3章 关联容器
+
+### 第19条: 理解相等 (equality) 和等价 (equivalence) 的区别
+
+find对"相同"的定义是相等, 是以operator==为基础的. set::insert对"相同"的定义是等价, 是以operator<为基础的.
+
+在实际操作中, 相等的概念是基于operator==的. 等价关系是以"在已排序的区间中对象值的相对顺序"为基础的. set\<Widget\>的默认比较函数是less\<Widget\> , 而在默认情况下less\<Widget\>只是简单地调用了针对Widget的operator\< . 如果两个值中的任何一个 (按照一定的排序准则) 都不在另一个的前面, 那么这两个值 (按照这一准则) 就是等价的. 在一般情形下, 一个关联容器的比较函数并不是operator<, 甚至也不是less, 它是用户定义的判别式 (predicate) . 每个标准关联容器都通过key_comp成员函数使排序判别式可被外部使用.
+
+满足以下条件的两个对象被认为是等价的:
+
+```cpp
+!c.key_comp()(a, b) && !c.key_comp()(b, a)
+
+// 当c的比较函数是less时, 等价于
+!(a < b) && !(b < a)
+```
