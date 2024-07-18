@@ -785,3 +785,84 @@ find对"相同"的定义是相等, 是以operator==为基础的. set::insert对"
 // 当c的比较函数是less时, 等价于
 !(a < b) && !(b < a)
 ```
+
+### 第20条: 为包含指针的关联容器指定比较类型
+
+`set<string*> ssp;` 是 `set<string*, less<string*>> ssp;` 的简写. 更准确地说, 是 `set<string*, less<string*>, allocator<string*>> ssp;` 的简写.
+
+如果想让string* 指针在集合中按字符串的值排序, 那么不能使用默认的比较函数子类less\<string*\>, 必须自己编写比较函数子类
+
+```cpp
+class StringPtrLess :
+    public binary_function<const string*, const string*, bool>
+{
+public:
+    bool operator()(const string* ps1, const string* ps2) const
+    {
+        return *ps1 < *ps2;
+    }
+};
+```
+
+使用StringPtrLess作为set\<string*\>的比较函数子类:
+
+```cpp
+typedef set<string*, StringPtrLess> StringPtrSet;
+StringPtrSet ssp;
+```
+
+随后可以按如下方式打印出ssp中的所有字符串:
+
+```cpp
+for (StringPtrSet::const_iterator i = ssp.cbegin(); i != ssp.cend(); ++i) {
+    cout << **i << endl;
+}
+```
+
+如果使用算法, 需要写一个函数它在打印string* 指针之前知道怎样才能解除指针引用, 然后与for_each一起使用这个函数
+
+```cpp
+void printStringPtr(const string* ps)
+{
+    cout << *ps << endl;
+}
+for_each(ssp.cbegin(), ssp.cend(), printStringPtr);
+```
+
+或者更进一步, 写一个通用的解除指针引用的函数子类, 然后与transform和ostream_iterator一起使用:
+
+```cpp
+struct Dereference
+{
+    template <typename T>
+    const T& operator()(const T* ptr) const
+    {
+        return *ptr;
+    }
+};
+
+transform(ssp.cbegin(), ssp.cend(), ostream_iterator<string>(cout, "\n"), Dereference());
+```
+
+创建一个函数子类而不是简单地为集合写一个比较函数的原因: set模板的三个参数每个都是一个类型, 而比较函数不是一个类型, 它是一个函数.
+
+大多数情况下这个比较类型只是解除指针的引用并对所指向的对象进行比较. 考虑到这种情况, 你最好手头上为这样的比较函数子准备一个模板.
+
+```cpp
+struct DereferenceLess
+{
+    template <typename PtrType>
+    bool operator()(const PtrType* pT1, const PtrType* pT2) const
+    {
+        return *pT1 < *pT2;
+    }
+};
+```
+
+这样的模板使我们不必编写像StringPtrLess这样的类, 因为我们可以使用DereferenceLess来代替:
+
+```cpp
+typedef set<string*, DereferenceLess> StringPtrSet;
+```
+
+本条款是关于包含指针的关联容器的, 但它同样也适用于其他一些容器, 这些容器中包含的对象与指针的行为相似, 比如智能指针和迭代器. 对于容器中包含了指向T对象的迭代器或智能指针的情形, DereferenceLess也同样可用作比较类型.
