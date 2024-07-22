@@ -874,3 +874,75 @@ typedef set<string*, DereferenceLess> StringPtrSet;
 注意, 对比较函数<取反将得到>=, 而非期望的>.
 
 记住, 比较函数的返回值表明的是按照该函数定义的排列顺序即一个值是否在另一个之前, 相等的值从来不会有前后顺序关系.
+
+### 第22条: 切勿直接修改set或multiset中的键
+
+像所有的标准关联容器一样, set 和 multiset 按照一定的顺序来存放自己的元素, 而这些容器的正确行为也是建立在其元素保持有序的基础之上的, 如果你把关联容器中一个元素的值改变了, 新的值可能不在正确的位置上, 这将会打破容器的有序性.
+
+对于 map 和 multimap 如果有程序试图改变这些容器中的键, 它将不能通过编译. 对于一个 map\<K,V\> 或 multimap\<K,V\> 类型的对象, 其中的元素类型是 pair\<const K,V\>. 对于set\<T\>或multiset\<T\>类型的对象, 容器中元素的类型是 T, 而不是const T.
+
+某个实现可能会使 set\<T\>::iterator 的 operator* 返回一个const T& 从而使 set 或 multiset 中的元素不可被修改, 所以试图修改 set 或 multiset 中元素的代码将是不可移植的.
+
+应对方法:
+
+- 如果你不关心可移植性, 而你想改变set或multiset中元素的值, 并且你的STL实现允许你这么做, 则请继续做下去. 只是注意不要改变元素中的键部分, 即元素中能够影响容器有序性的部分.
+- 如果你重视可移植性, 就要确保set和multiset中的元素不能被修改, 至少不能未经过强制类型转换（cast）就修改.
+
+#### 怎样正确地修改元素的非键部分, 并且是可移植的做法
+
+例如
+
+```cpp
+class Employee { };
+
+struct IDNumberLess
+{
+    public binary_function<Employee, Employee, bool>
+    {
+        bool operator()(const Employee& lhs, const Employee& rhs) const
+        {
+            return lhs.idNumber() < rhs.idNumber();
+        }
+    };
+};
+
+typedef set<Employee, IDNumberLess> EmpIDSet;
+EmpIDSet se;
+```
+
+对于下面的操作:
+
+```cpp
+Employee selectedID;
+
+EmpIDSet::iterator i = se.find(selectedID);
+if (i != se.end()) {
+    i->setTitle("CEO");
+}
+```
+
+在某些实现中不可进行, 为了使它能够编译和正确执行如下进行:
+
+```cpp
+if (i != se.end()) {
+    const_cast<Employee&>(*i).setTitle("CEO");
+}
+```
+
+大多数强制类型转换都可以避免, 包括我们刚刚考虑过的那个转换。如果你想以一种总是可行而且安全的方式来修改 set, multiset, map 和 multimap 中的元素, 则可以分5个简单步骤来进行:
+
+1. 找到你想修改的容器的元素
+2. 为将要被修改的元素做一份副本
+3. 修改该副本, 使它具有你期望它在容器中的值
+4. 把该元素从容器中删除, 通常是通过调用erase来进行的
+5. 把新的值插入到容器中, 如果按照容器的排列顺序, 新元素的位置可能与被删除元素的位置相同或紧邻, 则使用"提示"(hint)形式的insert, 以便把插入的效率从对数时间提高到常数时间, 把你从第1步得来的迭代器作为提示信息, 像下面这样:
+
+```cpp
+EmpIDSet::iterator i = se.find(selectedID); // 1
+if (i != se.end()) {
+    Employee e(*i);                         // 2
+    e.setTitle("CEO");                      // 3
+    se.erase(i++);                          // 4
+    se.insert(i, e);                        // 5
+}
+```
