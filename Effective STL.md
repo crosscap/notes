@@ -946,3 +946,108 @@ if (i != se.end()) {
     se.insert(i, e);                        // 5
 }
 ```
+
+### 第23条: 考虑用排序的vector替代关联容器
+
+对于许多应用, 散列容器可能提供的常数时间查找能力优于 set, multiset, map 和 multimap 的确定的对数时间查找能力.
+
+标准关联容器通常被实现为平衡的二叉查找树. 它对将插入, 删除, 查找混合在一起的应用提供了很好的性能, 但很多应用程序使用其数据结构的方式并不这么混乱, 它们使用其数据结构的过程可以明显地分为3个阶段:
+
+1. 设置阶段: 向创建一个新的数据结构, 并插入大量元素. 在这个阶段, 几乎所有的操作都是插入和删除操作, 很少或几乎没有查找操作
+2. 查询阶段: 查询该数据结构以找到特定的信息. 在这个阶段, 查找操作占主导地位, 插入和删除操作很少
+3. 重组阶段: 改变该数据结构的内容, 或许是删除所有的当前数据, 再插入新的数据. 在这个阶段行为上与阶段1类似, 完成后又进入阶段2
+
+对以这种方式使用其数据结构的应用程序来说, 排序的vector可能比关联容器提供了更好的性能, 因为只有对排序的容器才能够正确地使用查找算法binary_search、lower_bound和equal_range等.
+
+原因:
+
+- 大小: 关联容器基于节点, 每个节点都至少有指向左右子节点的指针, 一个指向父节点的指针, 而vector只有元素本身以及一些vector本身的开销 (通常是3个机器字，即3个指针或者2个指针加1个int), 这使得一个内存页中可存放的vector数据往往比关联容器多
+- 引用的局域性: 如果你的STL实现没有采取措施来提高这些树节点的引用局域性, 这些节点将会散布在你的全部地址空间中, 导致大量的页面错误, 即便使用了可提供聚集特性的自定义内存管理器, 关联容器在页面错误这一点上也会有更多的问题
+
+在排序的vector中存储数据可能比在标准关联容器中存储同样的数据要耗费更少的内存, 而考虑到页面错误的因素, 通过二分搜索法来查找一个排序的vector可能比查找一个标准关联容器要更快一些.
+
+一段使用排序的vector而不是set的代码骨架:
+
+```cpp
+vector<Widget> vw;
+...
+sort(vw.begin(), vw.end());
+
+Widget w;
+...
+if (binary_search(vw.begin(), vw.end(), w)) {
+    // 找到了
+}
+
+vector<Widget>::iterator i = lower_bound(vw.begin(), vw.end(), w);
+if (i != vw.end() && !(w < *i)) {
+    // 找到了
+}
+
+pair<vector<Widget>::iterator, vector<Widget>::iterator> range = equal_range(vw.begin(), vw.end(), w);
+if (range.first != range.second) {
+    // 找到了
+}
+
+sort(vw.begin(), vw.end());
+```
+
+如果你决定用一个vector来替换map或multimap, 需要注意, 如果你声明了一个map\<K,V\>, 那么map中储存的是pair\<const K,V\>, 但用vector来模仿map或multimap时必须使用pair\<K,V\>.
+
+下面的例子给出了注意事项:
+
+```cpp
+typedef pair<string, int> Data;
+
+class DataCompare
+{
+public:
+    bool operator()(const Data& lhs, const Data& rhs) const
+    {
+        return keyLess(lhs.first, rhs.first);
+    }
+
+    bool operator()(const Data& lhs, const Data::first_type& k) const
+    {
+        return keyLess(lhs.first, k);
+    }
+
+    bool operator()(const Data::first_type& k, const Data& rhs) const
+    {
+        return keyLess(k, rhs.first);
+    }
+
+private:
+    bool keyLess(const Data::first_type& k1, const Data::first_type& k2) const
+    {
+        return k1 < k2;
+    }
+};
+```
+
+把排序的vector当作映射表来使用, 其本质上就如同将它用作一个集合一样, 唯一的区别是, 需要用DataCompare对象作为比较函数:
+
+```cpp
+vector<Data> vd;
+...
+sort(vd.begin(), vd.end(), DataCompare());
+
+string s;
+...
+if (binary_search(vd.begin(), vd.end(), s, DataCompare())) {
+    // 找到了
+}
+
+vector<Data>::iterator i = lower_bound(vd.begin(), vd.end(), s, DataCompare());
+if (i != vd.end() && !(DataCompare()(s, *i))) {
+    // 找到了
+}
+
+pair<vector<Data>::iterator, vector<Data>::iterator> range = equal_range(vd.begin(), vd.end(), s, DataCompare());
+if (range.first != range.second) {
+    // 找到了
+}
+
+...
+sort(vd.begin(), vd.end(), DataCompare());
+```
