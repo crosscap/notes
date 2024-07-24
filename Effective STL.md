@@ -1051,3 +1051,74 @@ if (range.first != range.second) {
 ...
 sort(vd.begin(), vd.end(), DataCompare());
 ```
+
+### 第24条: 效率至关重要时, 请在 map::operator[] 与 map::insert 之间谨慎做出选择
+
+假定我们有一个Widget类:
+
+```cpp
+class Widget
+{
+public:
+    Widget();
+    Widget(double widget);
+    Widget& operator=(double widget);
+    ...
+};
+```
+
+map的operator[]函数与众不同, 它的设计目的是为了提供"添加和更新" (add or update) 功能. 也就是说, 表达式 `m[key] = value` 会在m中添加一个键值对, 键为key, 值为value, 如果m中已经有了一个键为key的元素, 那么它的值将被更新为value.
+
+对于如下语句:
+
+```cpp
+map<int, Widget> m;
+m[1] = 1.5;
+```
+
+功能上等同于:
+
+```cpp
+typedef map<int, Widget> IntWidgetMap;
+pair<IntWidgetMap::iterator, bool> result = m.insert(IntWidgetMap::value_type(1, Widget()));
+result.first->second = 1.5;
+```
+
+如果"直接使用我们所需要的值构造一个Widget"比"先默认构造一个Widget再赋值"效率更高, 那么, 我们最好把对operator[]的使用 (包括与之相伴的构造和赋值) 换成对insert的直接调用:
+
+```cpp
+m.insert(IntWidgetMap::value_type(1, 1.5));
+```
+
+它通常会节省3个函数调用: 一个用于创建默认构造的临时Widget对象, 一个用于析构该临时对象, 另一个是调用Widget的赋值操作符.
+
+当作为"添加"操作时, insert比operator[]效率更高, 当我们做"更新"操作时, 即当一个等价的键已经在映射表中时, 形势恰好反过来了.
+
+使用 operator[] 和 insert 各自的代码:
+
+```cpp
+m[k] = v;
+
+m.insert(IntWidgetMap::value_type(k, v)).first->second = v;
+```
+
+当向映射表中添加元素时, 要优先选用insert; 当更新元素时, 优先选用operator[].
+
+可以实现一个函数使其兼具insert和operator[]的优点:
+
+```cpp
+template<typename MapType, typename KeyArgType, typename ValueArgType>
+typename MapType::iterator efficientAddOrUpdate(MapType& m, const KeyArgType& k, const ValueArgType& v)
+{
+    typename MapType::iterator lb = m.lower_bound(k);
+    if (lb != m.end() && !(m.key_comp()(k, lb->first))) {
+        lb->second = v;
+        return lb;
+    } else {
+        typedef typename MapType::value_type MVT;
+        return m.insert(lb, MVT(k, v));
+    }
+}
+```
+
+关于这一实现有趣的一点是: KeyArgType和ValueArgType不必是存储在映射表中的类型, 只要它们能够转换成存储在映射表中的类型就可以了.
