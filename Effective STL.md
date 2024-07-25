@@ -1122,3 +1122,27 @@ typename MapType::iterator efficientAddOrUpdate(MapType& m, const KeyArgType& k,
 ```
 
 关于这一实现有趣的一点是: KeyArgType和ValueArgType不必是存储在映射表中的类型, 只要它们能够转换成存储在映射表中的类型就可以了.
+
+### 第25条: 熟悉非标准的散列容器
+
+注意: 在C++11中, 散列容器已经被标准化, 它们的名字与被标准化之前的非标准散列容器不同, 分别是unordered_set, unordered_multiset, unordered_map 和 unordered_multimap (原先是hash_set, hash_multiset, hash_map 和 hash_multimap).
+
+散列容器是关联容器, 需要知道存储在容器中的对象的类型, 用于这种对象的比较函数, 用于这些对象的分配子, 还需要指定一个散列函数, 散列容器的声明大致如下:
+
+```cpp
+template<typename T,
+         typename HashFunction,
+         typename CompareFunction,
+         typename Allocator = allocator<T>>
+class hash_container;
+```
+
+SGI的设计中值得注意的一点是使用了equal_to作为默认的比较函数, 而不是less, 因为散列关联容器和与之对应的标准容器不同, 其元素不是以排序方式存放的.
+
+Dinkumware则把默认的散列函数和比较函数放在一个单独的类似于traits的hash_compare类中.
+
+无论是SGI设计方案还是Dinkumware设计方案, 可以让散列实现来决定所有的策略:
+
+```cpp
+hash_set<int> intTable;
+```
