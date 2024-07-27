@@ -392,7 +392,7 @@ for (SeqContainer::iterator i = c.begin(); i != c.end(); ) {
 如果希望编写自定义的分配子, 需要注意:
 
 - 你的分配子是一个模板, 模板参数T代表你为它分配内存的对象的类型.
-- 提供类型定义pointer和reference, 但是始终让pointer为T* , reference为T&.因为C++标准很明确地指出, 允许库实现者假定每个分配子的指针类型等同于T* , 而分配子的引用类型就是T&.
+- 提供类型定义pointer和reference, 但是始终让pointer为T*, reference为T&.因为C++标准很明确地指出, 允许库实现者假定每个分配子的指针类型等同于T* , 而分配子的引用类型就是T&.
 - 千万别让你的分配子拥有随对象而不同的状态 (per-object state).通常, 分配子不应该有非静态的数据成员.
 - 记住, 传给分配子的allocate成员函数的是那些要求内存的对象的个数, 而不是所需的字节数.同时要记住, 这些函数返回T* 指针 (通过pointer类型定义), 即使尚未有T对象被构造出来.
 - 一定要提供嵌套的rebind模板, 因为标准容器依赖该模板.
@@ -790,7 +790,7 @@ find对"相同"的定义是相等, 是以operator==为基础的. set::insert对"
 
 `set<string*> ssp;` 是 `set<string*, less<string*>> ssp;` 的简写. 更准确地说, 是 `set<string*, less<string*>, allocator<string*>> ssp;` 的简写.
 
-如果想让string* 指针在集合中按字符串的值排序, 那么不能使用默认的比较函数子类less\<string*\>, 必须自己编写比较函数子类
+如果想让string*指针在集合中按字符串的值排序, 那么不能使用默认的比较函数子类less\<string*\>, 必须自己编写比较函数子类
 
 ```cpp
 class StringPtrLess :
@@ -1151,7 +1151,7 @@ hash_set<int> intTable;
 
 ### 第26条: iterator优先于const_iterator, reverse_iterator以及const_reverse_iterator
 
-STL中的所有标准容器都提供了4种迭代器类型, 对容器类container\<T\>而言, iterator类型的功效相当于T* , 而const_iterator则相当于const T* (或者T const*). reverse_iterator和const_reverse_iterator则是iterator和const_iterator的逆向版本.
+STL中的所有标准容器都提供了4种迭代器类型, 对容器类container\<T\>而言, iterator类型的功效相当于T*, 而const_iterator则相当于const T* (或者T const*). reverse_iterator和const_reverse_iterator则是iterator和const_iterator的逆向版本.
 
 为什么应该尽可能使用iterator, 而避免使用const或者reverse型的迭代器:
 
@@ -1172,3 +1172,25 @@ STL中的所有标准容器都提供了4种迭代器类型, 对容器类containe
 从const正确性的角度来看, 仅仅为了避免一些可能存在的STL实现缺陷而放弃const_iterator显得有欠公允, 但考虑到在容器类的某些成员函数中指定使用iterator的现状, 得出iterator较之const_iterator更为实用的结论也就不足为奇了, 更何况, 从实践的角度来看, 并不总是值得卷入const_iterator的麻烦中.
 
 PS: 现在情况可能有所改变, 需要查阅些资料来确认.
+
+### 第27条: 使用distance和advance将容器的const_iterator转换成iterator
+
+强制类型转换的代码将会导致编译错误, 也许某些vector和string容器能通过编译, 因为它们的迭代器是指针, 但即便在这样的STL实现中reverse_iterator和const_reverse_iterator仍然是真正的类, 不能被强制类型转换. 所以即使对于vector和string容器, 将const迭代器强制转换成迭代器也是不可取的.
+
+下面是一种将const_iterator转换成iterator的方法:
+
+```cpp
+typedef deque<int> IntDeque;
+typedef IntDeque::iterator Iter;
+typedef IntDeque::const_iterator ConstIter;
+
+IntDeque d;
+ConstIter ci;
+...
+Iter i(d.begin());
+advance(i, distance<ConstIter>(i, ci));
+```
+
+PS: 这里介绍的方法对使用了引用计数的string实现可能无效
+
+对于随机访问的迭代器, 此技术花费的时间是常数时间, 对于双向迭代器, 此技术花费的时间是线性时间.
