@@ -1194,3 +1194,20 @@ advance(i, distance<ConstIter>(i, ci));
 PS: 这里介绍的方法对使用了引用计数的string实现可能无效
 
 对于随机访问的迭代器, 此技术花费的时间是常数时间, 对于双向迭代器, 此技术花费的时间是线性时间.
+
+### 第28条: 正确理解由reverse_iterator的base()成员函数所产生的iterator的用法
+
+一个数组的begin(), end(), rbegin(), rend(), 以及其中生成的iterator和reverse_iterator之间的关系如下:
+
+![迭代器之间的关系](.%2Fimage%2FEffective%20STL.assets%2F%E8%BF%AD%E4%BB%A3%E5%99%A8%E4%B9%8B%E9%97%B4%E7%9A%84%E5%85%B3%E7%B3%BB.png)
+
+对于插入和删除操作, 按如下进行:
+
+- 如果要在一个reverse_iterator ri指定的位置上插入新元素, 则只需在ri.base()位置处插入元素即可, 对于插入操作而言, ri和ri.base()是等价的, ri.base()是真正与ri对应的iterator.
+- 如果要在一个reverse_iterator ri指定的位置上删除一个元素, 则需要在ri.base()前面的位置上执行删除操作, 对于删除操作而言, ri和ri.base()是不等价的, ri.base()不是与ri对应的iterator.
+
+但要注意, C和C++都规定了从函数返回的指针不应该被修改, 如果在你的STL平台上string和vector的iterator是指针的话, 类似`--ri.base()`这样的表达式就无法通过编译, 可以先递增reverse_iterator解决:
+
+```cpp
+v.erase((++ri).base());
+```
