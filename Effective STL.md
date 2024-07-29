@@ -164,11 +164,11 @@ empty对所有的标准容器都是常数时间操作, 而对一些list实现, s
 
 注意存在assign这么一个使用极其方便的成员函数.对所有的标准序列容器 (vector、string、deque和list), 它都存在.
 
-| 目标 | 函数 |
-| --- | --- |
-|完全替换一个容器的内容 | 赋值 (assignment)|
-|把一个容器复制到相同类型的另一个容器 | operator= 是可选择的赋值函数 |
-|给容器一组全新的值 | assign, operato= 则不能满足要求 |
+|               目标                |               函数             |
+| -------------------------------- | ------------------------------ |
+|       完全替换一个容器的内容       |        赋值 (assignment)       |
+| 把一个容器复制到相同类型的另一个容器 |   operator= 是可选择的赋值函数  |
+|         给容器一组全新的值         | assign, operato= 则不能满足要求 |
 
 几乎所有通过利用插入迭代器 (insert iterator)的方式 (即利用inserter、back_inserter或front_inserter)来限定目标区间的copy调用, 其实都可以 (也应该)被替换为对区间成员函数的调用.它更加直截了当地说明了所发生的事情.
 
@@ -193,11 +193,29 @@ empty对所有的标准容器都是常数时间操作, 而对一些list实现, s
 
 注意 C++ 中的一条普遍规律: 尽可能地解释为函数声明
 
+例如, 下面的代码会被解析为: 第一个参数的名称是dataFile, 它的类型是istream_iterator\<int\>, dataFile两边的括号是多余的, 会被忽略; 第二个参数没有名称, 它的类型是指向不带参数的函数的指针, 该函数返回一个istream_iterator<int>.
+
+```cpp
+ifstream dataFile("ints.dat");
+list<int> data(istream_iterator<int>(dataFile), istream_iterator<int>());
+```
+
 把形式参数的声明用括号括起来是非法的, 但给函数参数加上括号却是合法的, 所以通过增加一对括号, 我们强迫编译器按我们的方式来工作.
+
+```cpp
+list<int> data((istream_iterator<int>(dataFile)), istream_iterator<int>());
+```
 
 使用 istream_iterator 和区间构造函数时, 注意到这一点是有益的.
 
-更好的方式是在对data的声明中避免使用匿名的 istream_iterator 对象, 而是给这些迭代器一个名称.
+更好的方式是在对 data 的声明中避免使用匿名的 istream_iterator 对象, 而是给这些迭代器一个名称, 下面的代码应该总是可以工作的.
+
+```cpp
+ifstream dataFile("ints.dat");
+istream_iterator<int> dataBegin(dataFile);
+istream_iterator<int> dataEnd;
+list<int> data(dataBegin, dataEnd);
+```
 
 ### 第7条: 如果容器中包含了通过new操作创建的指针, 切记在容器对象析构前将指针delete掉
 
@@ -1211,3 +1229,32 @@ PS: 这里介绍的方法对使用了引用计数的string实现可能无效
 ```cpp
 v.erase((++ri).base());
 ```
+
+### 第29条: 对于逐个字符的输入请考虑使用istreambuf_iterator
+
+把一个文本文件的内容复制到一个string对象中，以下的代码看上去是一种合理的解决方案:
+
+```cpp
+ifstream inputFile("intrestingData.txt");
+inpytFile.unsetf(ios::skipws); // 不跳过空白字符
+/** 以上语句可用 如下语句代替
+ * inputFile >> noskipws;
+*/
+string fileData((istream_iterator<char>(inputFile)), istream_iterator<char>());
+```
+
+你可能会发现整个复制过程远不及你希望的那般快,  istream_iterator 内部使用的 operator>> 函数实际上执行了格式化的输入, 这意味着你每调用一次 perator>> 操作符, 它都要执行许多附加的操作:
+
+- 一个内部的sentry对象的构造和析构 (sentry是在调用operator>>的过程中进行设置和清理行为的特殊iostream对象)
+- 检查那些可能会影响其行为的流标志
+- 检查所有可能发生的读取错误
+- 果遇到错误的话, 还需要检查输入流的异常屏蔽标志以决定是否抛出相应的异常
+
+使用 istreambuf_iterator 可以避免这些问题, 它直接从流的缓冲区中读取下一个字符:
+
+```cpp
+ifstream inputFile("intrestingData.txt");
+string fileData((istreambuf_iterator<char>(inputFile)), istreambuf_iterator<char>());
+```
+
+对于非格式化的逐个字符输入过程, 你总是应该考虑使用istreambuf_iterator; 同样的, 对于非格式化的逐个字符输出过程, 你总是应该考虑使用ostreambuf_iterator.
