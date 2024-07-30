@@ -1258,3 +1258,75 @@ string fileData((istreambuf_iterator<char>(inputFile)), istreambuf_iterator<char
 ```
 
 对于非格式化的逐个字符输入过程, 你总是应该考虑使用istreambuf_iterator; 同样的, 对于非格式化的逐个字符输出过程, 你总是应该考虑使用ostreambuf_iterator.
+
+## 第5章 算法
+
+### 第30条: 确保目标区间足够大
+
+下面的代码是错误的:
+
+```cpp
+int transmorgrify(int x);
+
+vector<int> v;
+...
+vector<int> results;
+transform(v.begin(), v.end(), results.end(), transmorgrify);
+```
+
+这种transform调用是错误的, 因为它导致了对无效对象的赋值操作, 要通过调用back_inserter生成一个迭代器来指定目标区间的起始位置:
+
+```cpp
+transform(v.begin(), v.end(), back_inseter(results), transmorgrify);
+```
+
+back_inserter返回的迭代器将使得push_back被调用, 所以back_inserter可适用于所有提供了push_back方法的容器 (所有的标准序列容器: vector、string、deque和list); front_inserter在内部利用了push_front, 所以front_inserter仅适用于那些提供了push_front成员函数的容器 (如deque和list)
+
+由于front_inserter将通过push_front来加入每个对象, 所以这些对象在results中的顺序将会与在values中的顺序相反, 如果你希望transform把输出结果存放在results的前端, 同时保留它们在values中原有的顺序, 那么你只需按相反顺序遍历values即可
+
+inserter将用于把算法的结果插入到容器中的特定位置上:
+
+```cpp
+vector<int> v;
+
+vector<int> results;
+...
+transform(v.begin(), v.end(), inserter(results, results.begin() + results.size() / 2), transmorgrify);
+```
+
+插入操作的目标容器是vector或者string, 则你可以遵从第14条的建议, 预先调用reserve, 从而可以提高插入操作的性能, 在每次执行插入操作的时候, 你仍然需要承受因移动元素而带来的开销, 但这样做至少可以避免因重新分配容器内存而带来的开销:
+
+```cpp
+vector<int> v;
+
+vector<int> results;
+...
+results.reserve(results.size() + v.size());
+transform(v.begin(), v.end(), inserter(results, results.begin() + results.size() / 2), transmorgrify);
+```
+
+当一个算法需要向vector或者string中加入新元素的时候, 即使已经调用了reserve, 你也必须使用插入型的迭代器, 使用reserve但同时又不使用一个插入型的迭代器将会导致算法内部不确定的行为, 并且破坏容器的数据一致性.
+
+对于希望覆盖容器中已有的元素的情况, 仍然要遵从本条款的建议.
+
+```cpp
+vector<int> v;
+
+vector<int> results;
+...
+if (results.size() < v.size()) {
+    results.resize(v.size());
+}
+transform(v.begin(), v.end(), results.begin(), transmorgrify);
+```
+
+使用clear清空results后使用插入型迭代器也可以达到相同的效果:
+
+```cpp
+...
+results.clear();
+results.reserve(v.size());
+transform(v.begin(), v.end(), back_inseter(results), transmorgrify);
+```
+
+如果所使用的算法需要指定一个目标区间, 那么必须确保目标区间足够大, 或者确保它会随着算法的运行而增大 (使用插入型迭代器).
