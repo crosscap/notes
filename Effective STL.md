@@ -1330,3 +1330,82 @@ transform(v.begin(), v.end(), back_inseter(results), transmorgrify);
 ```
 
 如果所使用的算法需要指定一个目标区间, 那么必须确保目标区间足够大, 或者确保它会随着算法的运行而增大 (使用插入型迭代器).
+
+### 第31条: 了解各种与排序有关的选择
+
+- 如果需要对vector, string, deque或者数组中的元素执行一次完全排序, 那么可以使用sort或者stable_sort
+- 如果有一个vector、string、deque或者数组, 并且只需要对等价性最前面的n个元素进行排序, 那么可以使用partial_sort
+- 如果有一个vector、string、deque或者数组, 并且需要找到第n个位置上的元素或者需要找到等价性最前面的n个元素但又不必对这n个元素进行排序, 那么可以使用nth_element
+- 如果需要将一个标准序列容器中的元素按照是否满足某个特定的条件区分开来, 那么可以使用partition和stable_partition
+- 对于list而言:
+    - 可以直接调用partition和stable_partition算法
+    - 用list::sort来替代sort和stable_sort算法
+    - 如果你需要获得partial_sort或nth_element算法的效果, 可以有一些间接的途径来完成这项任务
+
+大多数情况下都可以使用sort来完成排序任务
+
+当进行不完全的排序时, 可以使用partial_sort
+
+```cpp
+bool qualityCompare(const Widget& lhs, const Widget& rhs);
+...
+partial_sort(w.begin(), w.begin() + 20, w.end(), qualityCompare);
+```
+
+当仅需要找到最大或最小的n个元素, 不关心它们的顺序时, 使用 nth_element, 有一段相当复杂的对nth_element的描述, 将在后文中列出
+
+```cpp
+nth_element(w.begin(), w.begin() + 19, w.end(), qualityCompare);
+```
+
+partial_sort和nth_element的调用大致相同, 仅第二个参数的含义不同, partial_sort的第二个参数是一个用于指定排序的区间的迭代器, 区间内的元素将被排序, 根据STL对区间的定义, 它实际上指向了目标区间外的第1个元素, 而nth_element的第二个参数则标识出容器中的某个特定位置, 该位置之前的元素都比该位置上的元素小, 该位置之后的元素都比该位置上的元素大.
+
+对于等价元素的排序, partial_sort和nth_element的行为无法控制, 而sort是不稳定的, 但stable_sort是稳定的.
+
+nth_element除了可以用来找到排名在前的n个元素以外还有其他的用途例如寻找中间值, 在下面的代码中演示:
+
+```cpp
+vector<Widgt>::iterator begin(w.begin());
+vector<Widgt>::iterator end(w.end());
+
+vector<Widgt>::iterator goalPositon;
+
+// find the middle element
+goalPositon = begin + w.size() / 2;
+nth_element(begin, goalPositon, end, qualityCompare);
+
+// find the 75% element
+goalPositon = begin + w.size() * 3 / 4;
+nth_element(begin, goalPositon, end, qualityCompare);
+```
+
+对于position, 它把所有满足某个特定条件的元素放在区间的前部, 它是不稳定的, 同时它有一个对应的稳定版本stable_partition.
+
+```cpp
+bool hasAcceptableQuality(const Widget& w);
+...
+vector<Widget>::iterator goodEnd = partition(w.begin(), w.end(), hasAcceptableQuality);
+```
+
+sort, stable_sort, partial_sort和nth_element算法都要求随机访问迭代器, 所以这些算法只能被应用于vector, string, deque和数组, 而partition和stable_partition只要求双向迭代器就能完成工作.
+
+list是唯一需要排序却无法使用随机访问排序算法的容器, 所以list特别提供了sort成员函数 (list::sort执行的是稳定排序).
+
+如果需要对list中的对象使用partial_sort或者nth_element算法的话只能通过间接途径来完成:
+
+- 将list中的元素复制到一个提供随机访问迭代器的容器中然后对该容器执行你所期望的算法
+- 先创建一个list::iterator的容器, 再对该容器执行相应的算法, 然后通过其中的迭代器访问list的元素
+- 利用一个包含迭代器的有序容器中的信息, 通过反复地调用splice成员函数, 将list中的元素调整到期望的目标位置
+
+除此之外, 可以通过使用标准的关联容器来保证容器中的元素始终保持特定的顺序; 也可以使用标准的非STL容器priority_queue, 它总是保持其元素的顺序关系 (对STL容器的定义要求STL容器支持迭代器, 而priority_queue并不支持迭代器, 所以它不能称为STL容器).
+
+依照算法的时间, 空间效率将本条款中讨论过的算法列出如下, 其中消耗资源较少的算法排在前面:
+
+1. partition
+2. stable_partition
+3. nth_element
+4. partial_sort
+5. sort
+6. stable_sort
+
+对排序算法的选择应该更多地基于你所需要完成的功能，而不是算法的性能
