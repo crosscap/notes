@@ -1409,3 +1409,52 @@ list是唯一需要排序却无法使用随机访问排序算法的容器, 所�
 6. stable_sort
 
 对排序算法的选择应该更多地基于你所需要完成的功能，而不是算法的性能
+
+### 第32条: 如果确实需要删除元素, 则需要在remove这一类算法之后调用erase
+
+下面是remove的声明:
+
+```cpp
+template<typename ForwardIterator, typename T>
+ForwardIterator remove(ForwardIterator first, ForwardIterator last, const T& value);
+```
+
+remove需要一对迭代器来指定所要进行操作的元素区间, 不接受容器作为参数, 所以remove并不知道这些元素被存放在哪个容器中. 但是, 从容器中删除元素唯一的办法是调用容器的成员函数, 所以remove不可能从容器中删除元素, 也就是说remove从容器中删除元素, 而容器中的元素数目却不会因此而减少.
+
+**remove不是真正意义上的删除, 因为它做不到.**
+
+remove移动了区间中的元素, 其结果是"不用被删除"的元素被移到了区间的前部并保持原有的顺序, 返回的一个迭代器指向最后一个"不用被删除"的元素之后的位置, 这个返回值相当于该区间新的逻辑结尾.
+
+位于区间后部的元素的值是未定义的, 一般而言会留其旧的值, 所以这里不一定留有被删除的值, 如果不想失去这些值, 那么就应该使用partition而不是remove.
+
+remove的实现大致如下:
+
+```cpp
+template<typename ForwardIterator, typename T>
+ForwardIterator remove(ForwardIterator first, ForwardIterator last, const T& value)
+{
+    ForwardIterator result = first;
+    while (first != last) {
+        if (!(*first == value)) {
+            *result = *first;
+            ++result;
+        }
+        ++first;
+    }
+    return result;
+}
+```
+
+在内部remove遍历整个区间, 用需要保留的元素的值覆盖掉那些要被删除的元素的值, 这种覆盖是通过对那些需要被覆盖的元素的赋值来完成的, 第33条将要解释的那样, 如果remove所覆盖掉的这些值是指针的话, 那么这可能会存在严重的问题.
+
+如果你真想删除元素, 那么应该在remove之后调用erase:
+
+```cpp
+vector<int> v;
+...
+v.erase(remove(v.begin(), v.end(), value), v.end());
+```
+
+由于remove和erase经常组合使用, 所以list的成员函数remove将二者合并, 是STL中唯一一个名为remove并且确实删除了容器中元素的函数.
+
+同时注意, remove并不是唯一一个适用于这种情形的算法, remove_if和unique也需要配合erase删除元素, unique与list的结合也与remove的情形类似.
