@@ -1458,3 +1458,52 @@ v.erase(remove(v.begin(), v.end(), value), v.end());
 由于remove和erase经常组合使用, 所以list的成员函数remove将二者合并, 是STL中唯一一个名为remove并且确实删除了容器中元素的函数.
 
 同时注意, remove并不是唯一一个适用于这种情形的算法, remove_if和unique也需要配合erase删除元素, unique与list的结合也与remove的情形类似.
+
+### 第33条: 对包含指针的容器使用remove这一类算法时要特别小心
+
+类的定义和相关vector大致如下:
+
+```cpp
+class Widget
+{
+public:
+    ...
+    bool isCertified() const;
+    ...
+};
+
+vector<Widget*> v;
+```
+
+当容器中存放的是指向动态分配的对象的指针的时候, 应该避免使用remove和类似的算法 (remove_if和unique), 很多情况下partition算法是个不错的选择.
+
+如果无法避免对这种容器使用remove, 那么一种可以消除该问题的做法是, 在进行erase-remove习惯用法之前, 先把那些指向未被验证过的Widget的指针删除并置成空, 然后清除该容器中所有的空指针.
+
+```cpp
+void delAndNullifyUncertified(Widget*& pWidget)
+{
+    if (!pWidget->isCertified()) {
+        delete pWidget;
+        pWidget = 0;
+    }
+}
+
+for_each(v.begin(), v.end(), delAndNullifyUncertified);
+
+v.erase(remove(v.begin(), v.end(), static_cast<Widget*>(0)), v.end());
+```
+
+这种做法的前提是你不希望该矢量中保留任何空指针, 如果你希望它保留空指针的话, 你可能只好自己写循环来删除那些满足条件的指针.
+
+如果容器中存放的不是普通指针, 而是具有引用计数功能的智能指针, 那么与remove相关的困难就不再存在了, 你可以直接使用erase-remove习惯用法:
+
+```cpp
+typedef shared_ptr<Widget> SPW;
+vector<SPW> v;
+...
+v.push_back(SPW(new Widget));
+...
+v.erase(remove_if(v.begin(), v.end(), not1(mem_fun(&Widget::isCertified))), v.end());
+```
+
+为了使以上的代码能够工作, 编译器必须能够把智能指针类型 (shared_ptr\<Widget\>) 式地转换为对应的内置指针类型 (Widget*).
