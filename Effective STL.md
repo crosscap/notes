@@ -1566,3 +1566,78 @@ unique和unique_copy与上述讨论过的算法有所不同, 它们即使对于�
 如果你为一个算法提供了一个排序的区间, 而这个算法也带一个比较函数作为参数, 那么一定要保证你传递的比较函数与这个排序区间所用的比较函数有一致的行为.
 
 所有要求排序区间的算法 (本条款中提到的除了unique和unique_copy以外的算法) 均使用等价性来判断两个对象是否"相同", unique和unique_copy在默认情况下使用"相等"判断, 改变这种默认行为只需给这些算法传递一个其他的预定义比较函数作为两个值"相同"的定义即可.
+
+### 第35条: 通过mismatch或lexicographical_compare实现简单的忽略大小写的字符串比较
+
+用STL实现忽略大小写的字符串比较是否困难取决于所要求的通用性, 例如是否考虑strcmp不支持的国际化的问题.
+
+本节将讨论容易的版本, (因为困难的版本其实与STL关系并不大, 它的问题涉及许多与地域有关的问题，关于这些地域问题请参阅附录A).
+
+当程序员需要忽略大小写的字符串比较功能的时候, 他们往往需要两个不同的调用接口: 一个与strcmp很类似 (将返回一个负数、零或者正数), 另一个与operator\<很类似 (将返回true或者false), 下面将实现这两个接口.
+
+首先需要一种办法来判断两个字符是否相同, 而不去管它们的大小写. 下面的字符比较函数是一个简化了的方案, 它与strcmp的字符串比较方法很相似.
+
+```cpp
+int ciCharCompare(char c1, char c2)
+{
+    int lc1 = tolower(static_cast<unsigned char>(c1));
+    int lc2 = tolower(static_cast<unsigned char>(c2));
+    if (lc1 < lc2)
+        return -1;
+    else if (lc1 > lc2)
+        return 1;
+    else
+        return 0;
+}
+```
+
+static_cast的作用是为了避免在某些平台上char是有符号的而导致的问题, 将它强制转换成一个unsigned char从而确保char有符号时它的值可以用unsigned char来表示, 这也是用int来存储来保存tolower的返回值的原因.
+
+有了ciCharCompare之后很容易写出接口中的第一个函数, 它根据两个字符串之间的关系返回一个负数, 零或者正数, 它建立在mismatch算法的基础上, 因为mismatch将标识出两个区间中第一个对应值不相同的位置, 它要求两个区间都是有效的, 所以需要将短的字符串作为第一个区间传入.
+
+```cpp
+int ciStringComparelmpl(const string& s1, const string& s2);
+
+int ciStringCompare(const string& s1, const string& s2)
+{
+    if (s1.size() <= s2.size()) {
+        return ciStringComparelmpl(s1, s2);
+    } else {
+        return -ciStringComparelmpl(s2, s1);
+    }
+}
+
+int ciStringComparelmpl(const string& s1, const string& s2)
+{
+    typedef pair<string::const_iterator, string::const_iterator> PSCI; // pair of string const iterator
+    PSCI p = mismatch(s1.begin(), s1.end(), s2.begin(), not2(ptr_fun(ciCharCompare)));
+    if (p.first == s1.end()) {
+        if (p.second == s2.end()) {
+            return 0;
+        } else {
+            return -1;
+        }
+    }
+    return ciCharCompare(*p.first, *p.second);
+}
+```
+
+ciStringCompare的第二种实现方法将产生一个很常用的STL判别式 (可以被用作关联容器中的比较函数), 只需要修改ciCharCompare, 使它成为一个具有判别式接口的字符比较函数, 然后把执行字符串比较的工作交给lexicographical_compare:
+
+```cpp
+bool ciCharLess(char c1, char c2)
+{
+    int lc1 = tolower(static_cast<unsigned char>(c1));
+    int lc2 = tolower(static_cast<unsigned char>(c2));
+    return lc1 < lc2;
+}
+
+bool ciStringCompare(const string& s1, const string& s2)
+{
+    return lexicographical_compare(s1.begin(), s1.end(), s2.begin(), s2.end(), ciCharLess);
+}
+```
+
+lexicographical_compare是strcmp的一个泛化版本, 可以与任何类型的值的区间一起工作, 它接受一个判别式, 由该判别式来决定两个值是否满足一个用户自定义的准则, 如果第一个区间的值在第二个区间的值之前, 则返回true, 否则返回false.
+
+与此同时, 忽略大小写的字符串比较函数也普遍存在于标准C库的非标准扩展中, 它们的名字一般为strcmp或者strcmpi, 如果你愿意牺牲一点移植性, 并且你知道你的字符串中不会包含内嵌的空字符, 而且你不考虑国际化支持, 那么只需要把两个string转化成const char* 指针, 然后调用strcmp或strcmpi可能是更好的选择.
