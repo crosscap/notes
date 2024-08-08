@@ -1507,3 +1507,62 @@ v.erase(remove_if(v.begin(), v.end(), not1(mem_fun(&Widget::isCertified))), v.en
 ```
 
 为了使以上的代码能够工作, 编译器必须能够把智能指针类型 (shared_ptr\<Widget\>) 式地转换为对应的内置指针类型 (Widget*).
+
+### 第34条: 了解哪些算法要求使用排序的区间作为参数
+
+要求排序区间或者作用于排序区间更加有效的算法如下:
+
+- binary_search
+- lower_bound
+- upper_bound
+- equal_range
+- set_union
+- set_intersection
+- set_difference
+- set_symmetric_difference
+- merge
+- inplace_merge
+- includes
+- unique
+- unique_copy
+
+#### 要求排序的算法
+
+##### 二分查找算法
+
+binary_search, lower_bound, upper_bound和equal_range 要求排序的区间是因为它们都使用了二分查找算法, 这些算法承诺了对数时间的查找效率.
+
+这些算法并不一定保证对数时间的查找效率, 只有当它们接受了随机访问迭代器的时候,它们才保证有这样的效率.
+
+##### 集合操作算法
+
+set_union, set_intersection, set_difference, set_symmetric_difference 提供了线性时间效率的集合操作.
+
+##### 归并算法
+
+merge和inplace_merge实际上实现了合并和排序的联合操作: 它们读入两个排序的区间, 然后合并成一个新的排序区间, 其中包含了原来两个区间中的所有元素, 它们具有线性时间的性能.
+
+##### includes
+
+includes算法用于判断一个区间是否包含另一个区间, 它要求两个区间都是排序的, 它承诺线性时间的效率.
+
+##### 分析
+
+对于这些算法而言, 他们承诺的时间效率是基于输入区间是排序的这一前提的, 如果输入区间不是排序的, 那么这些算法的时间效率将会变得不可预测.
+
+#### unique和unique_copy
+
+unique和unique_copy与上述讨论过的算法有所不同, 它们即使对于未排序的区间也有很好的行为, C++标准如下描述unique:
+
+> Eliminates all but the first element from every consecutive group of equivalent elements from the range $[first, last)$ and returns a past-the-end iterator for the new logical end of the range.
+> (删除 $[first, last)$ 区间中所有连续的等价元素中除了第一个元素之外的所有元素, 并返回一个指向新的逻辑结尾的迭代器)
+
+如果想让unique删除区间中所有重复的元素, 那么所有相同的元素要都是连续存放的, 这正是排序操作所要达到的目标之一. 在实践中, unique通常用于删除一个区间中的所有重复值, 所以总是要确保传给unique的区间是排序的.
+
+此外, unique使用了与remove类似的办法来删除区间中的元素, 而并非真正意义上的删除.
+
+#### 排序的定义
+
+如果你为一个算法提供了一个排序的区间, 而这个算法也带一个比较函数作为参数, 那么一定要保证你传递的比较函数与这个排序区间所用的比较函数有一致的行为.
+
+所有要求排序区间的算法 (本条款中提到的除了unique和unique_copy以外的算法) 均使用等价性来判断两个对象是否"相同", unique和unique_copy在默认情况下使用"相等"判断, 改变这种默认行为只需给这些算法传递一个其他的预定义比较函数作为两个值"相同"的定义即可.
