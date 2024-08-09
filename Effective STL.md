@@ -1641,3 +1641,40 @@ bool ciStringCompare(const string& s1, const string& s2)
 lexicographical_compare是strcmp的一个泛化版本, 可以与任何类型的值的区间一起工作, 它接受一个判别式, 由该判别式来决定两个值是否满足一个用户自定义的准则, 如果第一个区间的值在第二个区间的值之前, 则返回true, 否则返回false.
 
 与此同时, 忽略大小写的字符串比较函数也普遍存在于标准C库的非标准扩展中, 它们的名字一般为strcmp或者strcmpi, 如果你愿意牺牲一点移植性, 并且你知道你的字符串中不会包含内嵌的空字符, 而且你不考虑国际化支持, 那么只需要把两个string转化成const char* 指针, 然后调用strcmp或strcmpi可能是更好的选择.
+
+### 第36条: 理解copy_if算法的正确实现
+
+注意: 在C++11中, copy_if算法已经被加入到STL中.
+
+STL中有11个包含copy的算法, 但没有copy_if, 如果想简单地复制区间中满足某个判别式的所有元素, 那就需要自己来实现.
+
+11个copy算法如下:
+
+- copy
+- copy_backward
+- replace_copy
+- replace_copy_if
+- remove_copy
+- remove_copy_if
+- reverse_copy
+- unique_copy
+- rotate_copy
+- partial_sort_copy
+- uninitialized_copy
+
+利用remove_copy_if算法可以实现copy_if算法:
+
+```cpp
+template<typename InputIterator, typename OutputIterator, typename Predicate>
+OutputIterator copy_if(InputIterator begin, InputIterator end, OutputIterator destBegin, Predicate p)
+{
+    while (begin != end) {
+        if (p(*begin)) {
+            *destBegin = *begin;
+            ++destBegin;
+        }
+        ++begin;
+    }
+    return destBegin;
+}
+```
