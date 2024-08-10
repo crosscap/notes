@@ -1678,3 +1678,43 @@ OutputIterator copy_if(InputIterator begin, InputIterator end, OutputIterator de
     return destBegin;
 }
 ```
+
+### 第37条: 使用accumulate或者for_each进行区间统计
+
+对于常见的一些信息, STL中有专门的算法来完成计算区间任务.
+
+- count: 区间中有多少个元素
+- count_if: 区间中满足某个条件的元素有多少个
+- max_element: 区间中最大的元素
+- min_element: 区间中最小的元素
+
+需要按照某种自定义的方式对区间进行统计处理时, 可以使用accumulate算法, 它和其它3个数值算法 (inner_product, partial_sum, adjacent_difference) 位于numeric头文件中.
+
+accumulate 有两种形式, 第一种形式有两个迭代器和一个初始值, 它返回该初始值加上由迭代器标识的区间中的值的总和, 用于计算和返回的类型与初始值的类型相同, 迭代器则只要求是输入迭代器, 所以 istream_iterator 和 istreambuf_iterator 也是可以的.
+
+第二种形式带一个初始值和一个任意的统计函数, 这使得 accumulate 更加通用.
+
+例如, 考虑如何用accumulate来计算一个容器中字符串的长度总和, 需要下面的统计函数 (有两个参数, 一个是到目前为止区间中的元素的统计值, 另一个是区间的下一个元素, 函数的返回值是新的统计值):
+
+```cpp
+string::size_type
+stringLengthSum(string::size_type sumSoFar, const string& s)
+{
+    return sumSoFar + s.size();
+}
+```
+
+随后这样将 accumulate 和统计函数配合使用:
+
+```cpp
+set<string> ss;
+...
+string::size_type lengthSum = accumulate(ss.begin(), ss.end(), static_cast<string::size_type>(0), stringLengthSum);
+```
+
+传给 accumulate 的函数不允许有副作用 (标准要求), 所以这个时候可以使用 for_each 算法, 它的第三个参数是一个函数 (一般是一个函数子类), 对区间中的每个元素都要调用这个函数, 但这个函数只接收一个实参, 执行完毕后会返回它的函数.
+
+先忽略副作用的问题不谈, for_each 和 accumulate 在两个方面有所不同
+
+- 名字 accumulate 暗示着这个算法将会计算出一个区间的统计信息, 而 for_each 听起来就好像是对一个区间的每个元素做一个操作, for_each 来统计一个区间是合法的, 但是不如 accumulate 来得清晰
+- accumulate 直接返回我们所要的统计结果, 而for_each却返回一个函数对象, 我们必须从这个函数对象中提取出我们所要的统计信息, 在 C++ 中这意味着我们必须在函数子类中加入一个成员函数以便获得我们想要的统计信息
