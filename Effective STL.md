@@ -1774,4 +1774,41 @@ public:
 > 纯函数 (pure function): 返回值仅仅取决于其参数的函数, 在 C++ 中纯函数所能访问的数据应该仅局限于参数以及常量
 > 判别式类 (predicate class): 一个函数子类, 它的 operator() 是一个判别式
 
-满足上述要求最简单的解决途径就是在判别式类中使用 const 修饰符, 将 operator() 函数声明为 const, 但是这样做还远远不够.
+满足上述要求最简单的解决途径就是在判别式类中使用 const 修饰符, 将 operator() 函数声明为 const, 但是这样做还远远不够, 因为函数还是可以访问某些变量, 而一个精心设计的判别式类应该保证其 operator() 函数完全独立于所有这些变量, 也就是说在判别式类中将 operator() 声明为 const 对于判别式的正确行为是必要的但是仍不充分.
+
+### 第40条: 若一个类是函数子, 则应使它可配接
+
+假设有一个包含Widget对象指针的list容器, 另有一个函数可用来判断某个Widget指针所指的对象是否足够 "有趣", 想找到该list中第一个满足isInteresting()条件的Widget指针非常简单:
+
+```cpp
+list<Widget*> widgetPtrs;
+bool isInteresting(Widget* pw);
+...
+list<Widget*>::iterator i = find_if(widgetPtrs.begin(), widgetPtrs.end(), isInteresting);
+if (i != widgetPtrs.end()) {
+    ...
+}
+```
+
+反之, 如果想找到第一个不满足 isInteresting() 条件的 Widget 指针, 直接在 isInteresting 上作用一个 not1 即使用 `not1(isInteresting)` 是不行的, 必须先将ptr_fun应用在isInteresting上:
+
+```cpp
+list<Widget*>::iterator i = find_if(widgetPtrs.begin(), widgetPtrs.end(), not1(ptr_fun(isInteresting)));
+```
+
+ptr_fun 完成了一些类型定义的工作, 这些类型定义是not1所必需的, 而 IsInteresting 作为一个基本的函数指针, 它缺少not1所需要的类型定义.
+
+在 STL 中, 4个标准的函数配接器 (not1, not2, bind1st, bind2nd) 都要求一些特殊的类型定义 (argument_type, first_argument_type, second_argument_type, result_type), 提供了这些必要的类型定义的函数对象被称为可配接的 (adaptable) 函数对象, 不同种类的函数子类所需提供的类型定义也不尽相同, 但是除非你要编写自定义的配接器, 否则你并不需要知道有关这些类型定义的细节, 提供这些类型定义最简便的办法是让函数子从特定的基类 (从一个基结构) 继承.
+
+如果函数子类的 operator()只有一个实参, 那么它应该从 std::unary_function 继承; 如果函数子类的 operator() 有两个实参，那么它应该从 std::binary_function 继承.
+
+不过由于 unary_function 和 binary_function 是 STL 提供的模板, 所以不能直接继承它们, 而是继承它们所产生的结构, 这就要求指定某些类型实参:
+
+- 对于unary_function, 指定函数子类 operator() 所带的参数的类型, 以及返回类型
+- 对于binary_function, 指定三个类型: operator() 的第一个和第二个参数的类型, 以及返回类型
+
+传递给 unary_function 和 binary_function 的模板参数正是函数子类的 operator() 的参数类型和返回类型, 唯一有点怪异的是, operator() 的返回类型是 unary_function 或 binary_function 的最后一个实参.
+
+传递给 unary_function 或 binary_function 的非指针类型需要去掉 const 和引用 (&) 部分; 而如果 operator() 带有指针参数, 传给 unary_function 或 binary_function 的类型与 operator() 的参数和返回类型完全相同.
+
+尽管有时确实需要函数子类具有多种不同的调用形式, 但这样的函数子类是例外, 而不是规则, 通常情况下, 函数子类应该只有一个调用形式, 并且应该从 std::unary_function 或 std::binary_function 继承.
