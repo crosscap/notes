@@ -149,7 +149,7 @@ copy in, copy out. 这就是STL的工作方式.
 
 不幸的是, 指针的容器也有其自身的一些令人头疼的, 与STL相关的问题. 如果你想避开这些使人头疼的问题, 同时又想避免效率, 正确性和剥离这些问题, 你可能会发现智能指针 (smart pointer) 是一个诱人的选择.
 
-### 第4条: 调用empty而不是检查size()是否为0
+### 第4条: 调用 empty 而不是检查 size() 是否为 0
 
 empty对所有的标准容器都是常数时间操作, 而对一些list实现, size耗费线性时间.
 
@@ -189,7 +189,7 @@ empty对所有的标准容器都是常数时间操作, 而对一些list实现, s
 - 区间删除
 - 区间赋值
 
-### 第6条: 当心C++编译器最烦人的分析机制
+### 第6条: 当心 C++ 编译器最烦人的分析机制
 
 注意 C++ 中的一条普遍规律: 尽可能地解释为函数声明
 
@@ -217,7 +217,7 @@ istream_iterator<int> dataEnd;
 list<int> data(dataBegin, dataEnd);
 ```
 
-### 第7条: 如果容器中包含了通过new操作创建的指针, 切记在容器对象析构前将指针delete掉
+### 第7条: 如果容器中包含了通过 new 操作创建的指针, 切记在容器对象析构前将指针 delete 掉
 
 可以像下面的代码一样delete容器中的指针:
 
@@ -287,7 +287,7 @@ for (int i = 0; i < n; ++i) {
 
 你所要记住的是: STL容器很智能, 但没有智能到知道是否该删除自己所包含的指针的程度.当你使用指针的容器, 而其中的指针应该被删除时, 为了避免资源泄漏, 你必须或者用引用计数形式的智能指针对象 (比如shared_ptr)代替指针, 或者当容器被析构时手工删除其中的每个指针.
 
-### 第8条: 永远不要创建包含auto_ptr的容器
+### 第8条: 永远不要创建包含 auto_ptr 的容器
 
 注意！在 C++11 中, auto_ptr 已经被弃用, 应该使用 unique_ptr.
 
@@ -322,7 +322,7 @@ c.erase(value);
 
 这样做不仅是正确的, 而且是高效的, 只需要对数时间开销,而且, 关联容器的erase成员函数还有另外一个优点, 即它是基于等价 (equivalence)而不是相等 (equality)的.
 
-#### 删除使判别式返回true的每一个对象
+#### 删除使判别式返回 true 的每一个对象
 
 序列容器 (vector、string、deque和list), 我们把每个对remove的调用换成调用remove_if就可以了:
 
@@ -359,7 +359,7 @@ for (AssocContainer::iterator i = c.begin(); i != c.end(); ) {
 }
 ```
 
-#### 删除使badValue返回true的元素同时向一个日志 (log)文件中写一条信息
+#### 删除使 badValue 返回 true 的元素同时向一个日志 (log) 文件中写一条信息
 
 对于关联容器仅需要对刚才的循环做简单的修改:
 
@@ -405,7 +405,7 @@ for (SeqContainer::iterator i = c.begin(); i != c.end(); ) {
     - 如果容器是一个标准序列容器, 则写一个循环来遍历容器中的元素, 记住每次调用erase时, 要用它的返回值更新迭代器.
     - 如果容器是一个标准关联容器, 则写一个循环来遍历容器中的元素, 记住当把迭代器传给erase时, 要对迭代器做后缀递增.
 
-### 第10条: 了解分配子 (allocator)的约定和限制
+### 第10条: 了解分配子 (allocator) 的约定和限制
 
 如果希望编写自定义的分配子, 需要注意:
 
@@ -562,7 +562,7 @@ map<int, string, less<int>, SpecificHeapAllocator<pair<const int, string>, Heap2
 
 在这个例子中, 很重要的一点是, Heap1和Heap2都是类型而不是对象.否则它们将不会是等价的分配子, 违反分配子的等价性限制.
 
-### 第12条: 切勿对STL容器的线程安全性有不切实际的依赖
+### 第12条: 切勿对 STL 容器的线程安全性有不切实际的依赖
 
 对STL的线程安全性的第一个期望应该是, 它会随不同实现而异.
 
@@ -622,9 +622,9 @@ if (i != v.end()) {
 - 如果我们忘了为Lock创建新的代码块, 则互斥体仍然会被释放, 只不过会晚一些
 - 基于Lock的方案在有异常发生时也是强壮的
 
-## 第2章 vector和string
+## 第2章 vector 和 string
 
-### 第13条: vector和string优先于动态分配的数组
+### 第13条: vector 和 string 优先于动态分配的数组
 
 用new来动态分配内存需要额外进行如下工作
 
@@ -646,7 +646,7 @@ vector和string是功能完全的STL序列容器, 所以, 凡是适合于序列�
 - 寻找或开发另一个不使用引用计数的string实现
 - 考虑使用vector\<char\>而不是string
 
-### 第14条: 使用reserve来避免不必要的重新分配
+### 第14条: 使用 reserve 来避免不必要的重新分配
 
 对于vector和string, 增长过程是这样来实现的:
 
@@ -672,7 +672,7 @@ vector和string是功能完全的STL序列容器, 所以, 凡是适合于序列�
 1. 若能确切知道或大致预计容器中最终会有多少元素, 则此时可使用reserve简单地预留适当大小的空间
 2. 先预留足够大的空间, 然后, 当把所有数据都加入以后, 再去除多余的容量.
 
-### 第15条: 注意string的多样性
+### 第15条: 注意 string 的多样性
 
 几乎每个string实现都包含如下信息:
 
@@ -694,7 +694,7 @@ vector和string是功能完全的STL序列容器, 所以, 凡是适合于序列�
 - string可能支持, 也可能不支持针对单个对象的分配子
 - 不同的实现对字符内存的最小分配单位有不同的策略
 
-### 第16条: 了解如何把vector和string数据传给旧的API
+### 第16条: 了解如何把 vector 和 string 数据传给旧的 API
 
 如果有一个vector v, 而且需要得到一个指向v中数据的指针, 从而可把v中的数据作为数组来对待, 那么只需使用&v[0]. 对于string s, 对应的形式是s.c_str().
 
@@ -750,7 +750,7 @@ string s(vc.begin(), vc.begin() + charWritten);
 
 先让C API把数据写入到一个vector中, 然后把数据复制到期望最终写入的STL容器中, 这一思想总是可行的
 
-### 第17条: 使用"swap技巧"除去多余的容量
+### 第17条: 使用 "swap 技巧" 除去多余的容量
 
 从vector中去除多余的容量的方法:
 
@@ -893,7 +893,7 @@ typedef set<string*, DereferenceLess> StringPtrSet;
 
 记住, 比较函数的返回值表明的是按照该函数定义的排列顺序即一个值是否在另一个之前, 相等的值从来不会有前后顺序关系.
 
-### 第22条: 切勿直接修改set或multiset中的键
+### 第22条: 切勿直接修改 set 或 multiset 中的键
 
 像所有的标准关联容器一样, set 和 multiset 按照一定的顺序来存放自己的元素, 而这些容器的正确行为也是建立在其元素保持有序的基础之上的, 如果你把关联容器中一个元素的值改变了, 新的值可能不在正确的位置上, 这将会打破容器的有序性.
 
@@ -965,7 +965,7 @@ if (i != se.end()) {
 }
 ```
 
-### 第23条: 考虑用排序的vector替代关联容器
+### 第23条: 考虑用排序的 vector 替代关联容器
 
 对于许多应用, 散列容器可能提供的常数时间查找能力优于 set, multiset, map 和 multimap 的确定的对数时间查找能力.
 
@@ -1167,7 +1167,7 @@ hash_set<int> intTable;
 
 ## 第4章 迭代器
 
-### 第26条: iterator优先于const_iterator, reverse_iterator以及const_reverse_iterator
+### 第26条: iterator 优先于 const_iterator, reverse_iterator 以及 const_reverse_iterator
 
 STL中的所有标准容器都提供了4种迭代器类型, 对容器类container\<T\>而言, iterator类型的功效相当于T*, 而const_iterator则相当于const T* (或者T const*). reverse_iterator和const_reverse_iterator则是iterator和const_iterator的逆向版本.
 
@@ -1191,7 +1191,7 @@ STL中的所有标准容器都提供了4种迭代器类型, 对容器类containe
 
 PS: 现在情况可能有所改变, 需要查阅些资料来确认.
 
-### 第27条: 使用distance和advance将容器的const_iterator转换成iterator
+### 第27条: 使用 distance 和 advance 将容器的 const_iterator 转换成 iterator
 
 强制类型转换的代码将会导致编译错误, 也许某些vector和string容器能通过编译, 因为它们的迭代器是指针, 但即便在这样的STL实现中reverse_iterator和const_reverse_iterator仍然是真正的类, 不能被强制类型转换. 所以即使对于vector和string容器, 将const迭代器强制转换成迭代器也是不可取的.
 
@@ -1213,7 +1213,7 @@ PS: 这里介绍的方法对使用了引用计数的string实现可能无效
 
 对于随机访问的迭代器, 此技术花费的时间是常数时间, 对于双向迭代器, 此技术花费的时间是线性时间.
 
-### 第28条: 正确理解由reverse_iterator的base()成员函数所产生的iterator的用法
+### 第28条: 正确理解由 reverse_iterator 的 base() 员函数所产生的 iterator 的用法
 
 一个数组的begin(), end(), rbegin(), rend(), 以及其中生成的iterator和reverse_iterator之间的关系如下:
 
@@ -1230,7 +1230,7 @@ PS: 这里介绍的方法对使用了引用计数的string实现可能无效
 v.erase((++ri).base());
 ```
 
-### 第29条: 对于逐个字符的输入请考虑使用istreambuf_iterator
+### 第29条: 对于逐个字符的输入请考虑使用 istreambuf_iterator
 
 把一个文本文件的内容复制到一个string对象中，以下的代码看上去是一种合理的解决方案:
 
@@ -1410,7 +1410,7 @@ list是唯一需要排序却无法使用随机访问排序算法的容器, 所�
 
 对排序算法的选择应该更多地基于你所需要完成的功能，而不是算法的性能
 
-### 第32条: 如果确实需要删除元素, 则需要在remove这一类算法之后调用erase
+### 第32条: 如果确实需要删除元素, 则需要在 remove 这一类算法之后调用 erase
 
 下面是remove的声明:
 
@@ -1459,7 +1459,7 @@ v.erase(remove(v.begin(), v.end(), value), v.end());
 
 同时注意, remove并不是唯一一个适用于这种情形的算法, remove_if和unique也需要配合erase删除元素, unique与list的结合也与remove的情形类似.
 
-### 第33条: 对包含指针的容器使用remove这一类算法时要特别小心
+### 第33条: 对包含指针的容器使用 remove 这一类算法时要特别小心
 
 类的定义和相关vector大致如下:
 
@@ -1567,7 +1567,7 @@ unique和unique_copy与上述讨论过的算法有所不同, 它们即使对于�
 
 所有要求排序区间的算法 (本条款中提到的除了unique和unique_copy以外的算法) 均使用等价性来判断两个对象是否"相同", unique和unique_copy在默认情况下使用"相等"判断, 改变这种默认行为只需给这些算法传递一个其他的预定义比较函数作为两个值"相同"的定义即可.
 
-### 第35条: 通过mismatch或lexicographical_compare实现简单的忽略大小写的字符串比较
+### 第35条: 通过 mismatch 或 lexicographical_compare 实现简单的忽略大小写的字符串比较
 
 用STL实现忽略大小写的字符串比较是否困难取决于所要求的通用性, 例如是否考虑strcmp不支持的国际化的问题.
 
@@ -1642,11 +1642,11 @@ lexicographical_compare是strcmp的一个泛化版本, 可以与任何类型的�
 
 与此同时, 忽略大小写的字符串比较函数也普遍存在于标准C库的非标准扩展中, 它们的名字一般为strcmp或者strcmpi, 如果你愿意牺牲一点移植性, 并且你知道你的字符串中不会包含内嵌的空字符, 而且你不考虑国际化支持, 那么只需要把两个string转化成const char* 指针, 然后调用strcmp或strcmpi可能是更好的选择.
 
-### 第36条: 理解copy_if算法的正确实现
+### 第36条: 理解 copy_if 算法的正确实现
 
-注意: 在C++11中, copy_if算法已经被加入到STL中.
+注意: 在 C++11 中, copy_if 算法已经被加入到 STL 中.
 
-STL中有11个包含copy的算法, 但没有copy_if, 如果想简单地复制区间中满足某个判别式的所有元素, 那就需要自己来实现.
+STL 中有11个包含 copy 的算法, 但没有 copy_if, 如果想简单地复制区间中满足某个判别式的所有元素, 那就需要自己来实现.
 
 11个copy算法如下:
 
@@ -1679,7 +1679,7 @@ OutputIterator copy_if(InputIterator begin, InputIterator end, OutputIterator de
 }
 ```
 
-### 第37条: 使用accumulate或者for_each进行区间统计
+### 第37条: 使用 accumulate 或者 for_each 进行区间统计
 
 对于常见的一些信息, STL中有专门的算法来完成计算区间任务.
 
@@ -1811,4 +1811,164 @@ ptr_fun 完成了一些类型定义的工作, 这些类型定义是not1所必需
 
 传递给 unary_function 或 binary_function 的非指针类型需要去掉 const 和引用 (&) 部分; 而如果 operator() 带有指针参数, 传给 unary_function 或 binary_function 的类型与 operator() 的参数和返回类型完全相同.
 
-尽管有时确实需要函数子类具有多种不同的调用形式, 但这样的函数子类是例外, 而不是规则, 通常情况下, 函数子类应该只有一个调用形式, 并且应该从 std::unary_function 或 std::binary_function 继承.
+```cpp
+template<typename T>
+class MeetsThreshold:
+    public unary_function<Widget, bool>
+{
+private:
+    const T threshold;
+public:
+    MeetsThreshold(const T&);
+    bool operator()(const Widget&) const;
+};
+
+struct WidgetNameCompare:
+    public binary_function<Widget, Widget, bool>
+{
+    bool operator()(const Widget&, const Widget&) const;
+};
+
+struct PtrWidgetNameCompare:
+    public binary_function<Widget*, Widget*, bool>
+{
+    bool operator()(const Widget*, const Widget*) const;
+};
+```
+
+如果一个函数子的所有成员都是公有的, 那么通常会将其声明为结构而不是类. 究竟是选择结构还是类来定义函数子纯属个人编码风格, 但是应该注意到, STL中所有的无状态函数子类 (如less\<T\>, plus\<T\>等) 一般都被定义成结构.
+
+可配接的函数对象可以像下面这样使用:
+
+```cpp
+list<Widget> widgets;
+...
+lst<Widget>::reverse_iterator i1 = find_if(widgets.rbegin(), widgets.rend(), not1(MeetsThreshold<int>(42)));
+Widget w;
+list<Widget*>::iterator i2 = find_if(widgetPtrs.begin(), widgetPtrs.end(), bind2nd(WidgetNameCompare(), w));
+```
+
+STL函数对象是C++函数的一种抽象和建模形式, 而每个C++函数只有一组确定的参数类型和一个返回类型. 尽管有时确实需要函数子类具有多种不同的调用形式, 但这样的函数子类是例外, 而不是规则, 通常情况下, 函数子类应该只有一个调用形式, 并且应该从 std::unary_function 或 std::binary_function 继承.
+
+### 第41条: 理解 ptr_fun, mem_fun, mem_fun_ref 的来由
+
+如果有一个函数f和一个对象x, 现在希望在x上调用f, 而我们在x的成员函数之外, 为了执行这个调用C++提供了3种不同的语法:
+
+```cpp
+f(x);       // 形式 #1 f为一个非成员函数
+x.f();      // 形式 #2 f为一个成员函数, x为一个对象或者对象的引用
+p->f();     // 形式 #3 f为一个成员函数, p为一个指向对象的指针
+```
+
+STL中一种很普遍的惯例: 函数或者函数对象在被调用的时候, 总是使用非成员函数的语法形式, 也就是形式 #1
+
+所以, 如果 test 函数是 Widget 类的一个非成员函数那么下面的代码是合法的:
+
+```cpp
+void test(const Widget&);
+vector<Widget> vw;
+
+for_each(vw.begin(), vw.end(), test);   // 形式 #1
+```
+
+但是如果 test 是 Widget 类的一个成员函数, 下面的代码就不合法了:
+
+```cpp
+class Widget
+{
+public:
+    ...
+    void test() const;
+};
+
+vector<Widget> vw;
+list<Widget*> lpw;
+
+for_each(vw.begin(), vw.end(), &Widget::test);   // 期望形式 #2
+for_each(lpw.begin(), lpw.end(), &Widget::test); // 期望形式 #3
+```
+
+mem_fun 和 mem_fun_ref 的作用就是将成员函数调用转换成非成员函数调用, 也就是将形式 #2 和 #3 转换成形式 #1, 针对它们所配接的成员函数的原型的不同有几种变化形式, 其中一个如下:
+
+```cpp
+template<typename R, typename C>
+mem_fun_t<R, C>
+mem_fun(R (C::*pmf)());
+```
+
+mem_fun带一个指向某个成员函数的指针参数pmf, 并且返回一个mem_fun_t类型的对象;
+ mem_fun_t 是一个函数子类, 它拥有该成员函数的指针并提供了operator()函数, 在operator()中调用了通过参数传递进来的对象上的该成员函数.
+
+mem_fun 将形式 #3 转换成形式 #1,并产生一个类型为mem_fun_t的配接器对象;
+ 而 mem_fun_ref 则将形式 #2 转换成形式 #1, 并产生一个类型为mem_fun_ref_t的配接器对象:
+
+```cpp
+for_each(vw.begin(), vw.end(), mem_fun_ref(&Widget::test)); // 形式 #2
+for_each(lpw.begin(), lpw.end(), mem_fun(&Widget::test));   // 形式 #3
+```
+
+对于 ptr_fun, 它的作用是将一个普通函数转换成一个函数子类, 他将为函数指针引入类型定义, 所以当算法不需要这种类型定义的时候, 可以不使用 ptr_fun, 所以对于 ptr_fun 有两种使用策略: 一种是每次将一个函数传递给一个STL组件的时候总是使用它, STL不会在意而且这样做也不会带来运行时的性能损失; 另一种是只在需要的时候使用它.
+
+mem_fun 和 mem_fun_ref 的情形则截然不同, 每次在将一个成员函数传递给一个 STL 组件的时候你就要使用它们, 它们不仅仅引入了一些类型定义, 还转换调用语法的形式来适应算法.
+
+### 第42条: 确保 less\<T\> 与 operator\< 具有相同的语义
+
+作为一般性的规则, 对std名字空间的组件进行修改是被禁止的, 但是在某些特定的情况下, 有些对std名字空间的修补工作仍然是允许的, 但是要注意, 大多数情况下你应该有比特化std模板更好的选择.
+
+C++ 允许程序员做出一些合理的假设, 假设使用 less 总是等价于使用operator\< 也是合理的, operator\< 不仅仅是 less 的默认实现方式, 它也是程序员期望less所做的事情.
+
+应该尽量避免修改less的行为, 因为这样做很可能会误导其他的程序员, 如果你使用了less, 无论是显式地或是隐式地, 你都需要确保它与 operator\< 具有相同的意义. 如果你希望以一种特殊的方式来排序对象, 那么最好创建一个特殊的函数子类, 它的名字不是 less 就可以, 这样做其实是很简单的.
+
+## 第7章 在程序中使用 STL
+
+### 第43条: 算法调用优先于手写的循环
+
+如果你有一个支持 redraw 的 Widget 类, 当你想重画一个 list 中的所有 Widget 对象的时候, 可以用一个循环来完成, 也可以使用 for_each 算法:
+
+```cpp
+class Widget
+{
+    ...
+public:
+    void redraw() const;
+    ...
+};
+
+list<Widget> lw;
+...
+for(list<Widget>::iterator i = lw.begin(); i != lw.end(); ++i) {
+    i->redraw();
+}
+
+for_each(lw.begin(), lw.end(), mem_fun_ref(&Widget::redraw));
+```
+
+调用算法通常是更好的选择, 它往往优先于任何一个手写循环, 有三个原因:
+
+- **效率**: 算法通常比程序员自己写的循环效率更高
+- **正确性**: 自己写循环比使用算法更容易出错
+- **可维护性**: 使用算法的代码通常比手写循环的代码更加简洁明了
+
+#### 效率
+
+从效率方面来说, 算法有三个理由比显式循环更好, 其中两个是主要的, 一个是次要的.
+
+次要一点的理由是: 使用算法可以减少冗余的计算, 例如, STL 的实现者尽可能让大多数编译器都能够将循环中的计算提到外面来以避免重复计算.
+
+主要的理由1: 类库实现者可以根据他们对于容器实现的了解程度对遍历过程进行优化
+
+主要的理由2: 除了一些不太重要的算法以外, 其他几乎所有的STL算法都使用了复杂的计算机科学算法
+
+#### 正确性
+
+自己写循环需要关注迭代器的有效性, 以避免迭代器没有被正确地维护好或者使用了无效的迭代器, 使用算法则不需要关心这些问题,  此外, 合理地使用算法也可以避免某些逻辑错误.
+
+#### 可维护性
+
+算法的名称描述了它们的功能, 这使得代码更加容易理解, 也使得代码更加容易维护.
+
+#### 总结
+
+要想表明在一次迭代中该完成什么工作，则使用循环比算法更为清晰; 如果你要做的工作与一个算法所实现的功能很相近, 那么用算法调用更好; 但是如果你的循环很简单, 而若使用算法来实现的话, 却要求混合使用绑定器和配接器或者要求一个单独的函数子类, 那么可能使用手写的循环更好; 如果你在循环中要做的工作很多而且又很复杂, 则最好使用算法调用.
+
+使用了 STL 的精巧的 C++ 程序比不用 STL 的程序所包含的循环要少得多, 这样我们就提高了软件的抽象层次, 而使我们的软件更易于编写, 更易于文档化, 也更易于扩展和维护.
