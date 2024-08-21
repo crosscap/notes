@@ -28,7 +28,7 @@
 
 所有重载了函数调用操作符 (即operator())的类都是一个函数子类 (functor class).这些类的对象可以被当作函数来调用.
 
-绑定器: STL中的函数子类, 用于将一个函数和一个或多个参数绑定在一起.包括`bind1st`和`bind2nd`.
+绑定器: STL中的函数子类, 用于将一个函数和一个或多个参数绑定在一起.包括 `bind1st`和 `bind2nd`.
 
 ### 时间复杂度
 
@@ -164,11 +164,11 @@ empty对所有的标准容器都是常数时间操作, 而对一些list实现, s
 
 注意存在assign这么一个使用极其方便的成员函数.对所有的标准序列容器 (vector、string、deque和list), 它都存在.
 
-|               目标                |               函数             |
-| -------------------------------- | ------------------------------ |
-|       完全替换一个容器的内容       |        赋值 (assignment)       |
-| 把一个容器复制到相同类型的另一个容器 |   operator= 是可选择的赋值函数  |
-|         给容器一组全新的值         | assign, operato= 则不能满足要求 |
+| 目标                                 | 函数                            |
+| ------------------------------------ | ------------------------------- |
+| 完全替换一个容器的内容               | 赋值 (assignment)               |
+| 把一个容器复制到相同类型的另一个容器 | operator= 是可选择的赋值函数    |
+| 给容器一组全新的值                   | assign, operato= 则不能满足要求 |
 
 几乎所有通过利用插入迭代器 (insert iterator)的方式 (即利用inserter、back_inserter或front_inserter)来限定目标区间的copy调用, 其实都可以 (也应该)被替换为对区间成员函数的调用.它更加直截了当地说明了所发生的事情.
 
@@ -193,7 +193,7 @@ empty对所有的标准容器都是常数时间操作, 而对一些list实现, s
 
 注意 C++ 中的一条普遍规律: 尽可能地解释为函数声明
 
-例如, 下面的代码会被解析为: 第一个参数的名称是dataFile, 它的类型是istream_iterator\<int\>, dataFile两边的括号是多余的, 会被忽略; 第二个参数没有名称, 它的类型是指向不带参数的函数的指针, 该函数返回一个istream_iterator<int>.
+例如, 下面的代码会被解析为: 第一个参数的名称是dataFile, 它的类型是istream_iterator\<int\>, dataFile两边的括号是多余的, 会被忽略; 第二个参数没有名称, 它的类型是指向不带参数的函数的指针, 该函数返回一个istream_iterator`<int>`.
 
 ```cpp
 ifstream dataFile("ints.dat");
@@ -459,7 +459,7 @@ public:
 #### 为什么要自定义分配子
 
 - 经过测试发现STL默认的内存管理器 (即allocator\<T\>)太慢, 或者浪费内存, 或者导致了太多的内存碎片
-- allocator<T>是线程安全的, 你的程序不需要
+- allocator\<T\>是线程安全的, 你的程序不需要
 - 某些容器中的对象通常是一起使用的, 想把它们放在一个特殊堆中的相邻位置上, 以便尽可能地做到引用局部化
 - 建立一个与共享内存相对应的特殊的堆, 然后在这块内存中存放一个或多个容器
 
@@ -791,9 +791,9 @@ bool* pb = &vb[0];
 
 ### 第19条: 理解相等 (equality) 和等价 (equivalence) 的区别
 
-find对"相同"的定义是相等, 是以operator==为基础的. set::insert对"相同"的定义是等价, 是以operator<为基础的.
+find对 "相同" 的定义是相等, 是以 operator== 为基础的. set::insert 对 "相同" 的定义是等价, 是以 operator\< 为基础的.
 
-在实际操作中, 相等的概念是基于operator==的. 等价关系是以"在已排序的区间中对象值的相对顺序"为基础的. set\<Widget\>的默认比较函数是less\<Widget\> , 而在默认情况下less\<Widget\>只是简单地调用了针对Widget的operator\< . 如果两个值中的任何一个 (按照一定的排序准则) 都不在另一个的前面, 那么这两个值 (按照这一准则) 就是等价的. 在一般情形下, 一个关联容器的比较函数并不是operator<, 甚至也不是less, 它是用户定义的判别式 (predicate) . 每个标准关联容器都通过key_comp成员函数使排序判别式可被外部使用.
+在实际操作中, 相等的概念是基于 operator== 的. 等价关系是以 "在已排序的区间中对象值的相对顺序" 为基础的. set\<Widget\> 的默认比较函数是 less\<Widget\>, 而在默认情况下 less\<Widget\> 只是简单地调用了针对 Widget 的 operator\<. 如果两个值中的任何一个 (按照一定的排序准则) 都不在另一个的前面, 那么这两个值 (按照这一准则) 就是等价的. 在一般情形下, 一个关联容器的比较函数并不是 operator\<, 甚至也不是 less, 它是用户定义的判别式 (predicate) . 每个标准关联容器都通过 key_comp 成员函数使排序判别式可被外部使用.
 
 满足以下条件的两个对象被认为是等价的:
 
@@ -1224,7 +1224,7 @@ PS: 这里介绍的方法对使用了引用计数的string实现可能无效
 - 如果要在一个reverse_iterator ri指定的位置上插入新元素, 则只需在ri.base()位置处插入元素即可, 对于插入操作而言, ri和ri.base()是等价的, ri.base()是真正与ri对应的iterator.
 - 如果要在一个reverse_iterator ri指定的位置上删除一个元素, 则需要在ri.base()前面的位置上执行删除操作, 对于删除操作而言, ri和ri.base()是不等价的, ri.base()不是与ri对应的iterator.
 
-但要注意, C和C++都规定了从函数返回的指针不应该被修改, 如果在你的STL平台上string和vector的iterator是指针的话, 类似`--ri.base()`这样的表达式就无法通过编译, 可以先递增reverse_iterator解决:
+但要注意, C和C++都规定了从函数返回的指针不应该被修改, 如果在你的STL平台上string和vector的iterator是指针的话, 类似 `--ri.base()` 这样的表达式就无法通过编译, 可以先递增reverse_iterator解决:
 
 ```cpp
 v.erase((++ri).base());
@@ -1992,3 +1992,161 @@ for_each(lw.begin(), lw.end(), mem_fun_ref(&Widget::redraw));
 - remove, remove_if, unique 算法不真正删除元素, 而成员函数则真正删除元素
 - sort 算法要求随机访问迭代器, 而 list 的成员函数 sort 不需要
 - merge 算法不修改其源区间, 而list::merge则总是在修改它所操作的链表
+
+### 第45条: 正确区分count, find, binary_search, lower_bound, upper_bound 和 equal_range
+
+假设有一个容器或者有一对迭代器标识了一个区间, 现在希望在容器或者区间中查找一些信息, 选择往往是: count, count_if, find, find_if, binary_search, lower_bound, upper_bound 和 equal_range.
+
+后续的讨论将忽略 count_if 和 find_if 形式的算法, 同样也会忽略binary_search, lower_bound, upper_bound 和 equal_range 的带有判别式的版本.
+
+#### 一对迭代器的情况
+
+如果区间是排序的, 那么通过binary_search, lower_bound, upper_bound 和 equal_range, 可以获得更快的查找速度 (通常是对数时间); 如果区间不是排序的, 那么选择范围将局限于 count 和 find, 这些算法仅能提供线性时间的效率.
+
+如果有一个未排序的区间, 选择 count 还是 find 取决于希望完成的工作, count回答的问题是 "区间中是否存在某个特定的值? 如果存在, 有多少个副本?", 而 find 回答的问题是 "区间中是否存在某个特定的值? 如果存在, 它在哪里?"
+
+假设你仅仅想知道一个list容器中是否存在某个特定的Widget对象值w, 使用这两个算法的代码如下:
+
+```cpp
+list<Widget> lw;
+Widget w;
+...
+if (count(lw.begin(), lw.end(), w)) {
+    ...
+}
+
+if (find(lw.begin(), lw.end(), w) != lw.end()) {
+    ...
+}
+```
+
+当搜索成功时, count 的效率比 find 低, 所以在这种情况下应该使用 find. 当你不仅仅想知道一个值是否存在, 而且还想知道它在容器中的位置时, 也应该使用 find.
+
+```cpp
+list<Widget>::iterator i = find(lw.begin(), lw.end(), w);
+if (i != lw.end()) {
+    ...
+} else {
+    ...
+}
+```
+
+对于已经排过序的区间, 查找算法 (binary_search, lower_bound, upper_bound 和 equal_range) 以对数时间运行. 要注意的是, count 和 find 算法使用相等性进行搜索, 而 binary_search, lower_bound, upper_bound 和 equal_range 算法使用等价性进行搜索.
+
+要想测试一个排序区间中是否存在某一个特定的值, 可以使用 binary_search, 它只返回一个布尔值, 也就是说, binary_search 只回答 "是否存在?".
+
+使用lower_bound来查找某个特定值的时候, 它会返回一个迭代器, 该迭代器要么指向该值的第一份副本 (如果存在的话), 要么指向一个可以插入该值的位置 (如果不存在的话), 所以 lower_bound 回答的问题是 "这个值在区间中吗? 如果在, 它的第一份副本在哪里? 如果不在, 它应该插入到哪里?"
+
+与 find 一样的是必须测试 lower_bound 的结果, 以便判断它是否指向你要找的值, 但是又有两点不同:
+
+1. 不能用 end 迭代器来测试 lower_bound 的返回值, 必须测试 lower_bound 所标识的对象, 断该对象是否具有想要找的值
+2. lower_bound 使用等价性, 而 find 使用相等性
+
+```cpp
+vector<Widet>::iterator i = lower_bound(vw.begin(), vw.end(), w);
+if (i != vw.end() && ((*i < w) || (w < *i))) {
+    ...
+} else {
+    ...
+}
+```
+
+要注意的是, 你必须保证使用与 lower_bound 相同的比较函数进行等价性测试, 所以传入给 lower_bound 的比较函数改变时, 进行等价性测试的代码也要改变.
+
+使用 equal_range 可以避免上述麻烦. 如果你有一个排序的区间, 而问题是 "这个值在区间中吗? 如果在, 它在哪里?", 那么应该使用 equal_range, 它返回一对迭代器, 第一个迭代器等于 lower_bound 返回的迭代器, 第二个迭代器等于 upper_bound 返回的迭代器 (即指向该区间中与所查找的值等价的最后一个元素的下一个位置), 即 equal_range 返回的这一对迭代器标识了一个子区间, 其中的值与你所查找的值等价.
+
+equal_range 的返回值有两个需要注意的地方:
+
+1. 如果返回的两个迭代器相同, 则说明查找所得的对象区间为空, 即没有找到这样的值
+2. equal_range 返回的迭代器之间的距离与这个区间中的对象数目是相等的, 也就是原始区间中与被查找的值等价的对象数目
+
+```cpp
+pair<vector<Widget>::iterator, vector<Widget>::iterator> p = equal_range(vw.begin(), vw.end(), w);
+if (p.first != p.second) {
+    ...
+} else {
+    ...
+}
+cout << "There are " << distance(p.first, p.second) << " elements in vw equivalent to w." << endl;
+```
+
+当需要找到区间中的某一个位置时, 按需求使用 lower_bound 和 upper_bound, lower_bound 用于找到第一个等价的值或者第一个大于等于该值的位置, upper_bound 用于找到第一个大于该值的位置.
+
+如果想在一个排序区间中插入一些对象, 并且希望等价的对象仍然保持它们在插入时的顺序, 那么 upper_bound 会非常有用:
+
+```cpp
+vector<Widget> vw;
+Widget w;
+...
+vw.insert(upper_bound(vw.begin(), vw.end(), w), w);
+```
+
+#### 容器的情况
+
+对于序列容器 (vector, string, deque, list), 通过 begin 和 end 成员函数可以获得一个区间; 对于关联容器 (set, map, multiset, multimap), 可以使用它们与算法同名的成员函数来完成相同的工作, 包括 count, find, lower_bound, upper_bound 和 equal_range.
+
+#### 总结
+
+根据本条款以上所讨论的一切总结为下面的表格:
+
+<table>
+    <tr>
+        <td rowspan="2">想知道什么</td>
+        <td colspan="2">使用算法</td>
+        <td colspan="2">使用成员函数</td>
+   </tr>
+    <tr>
+        <td>未排序的区间</td>
+        <td>排序的区间</td>
+        <td>set 或 map</td>
+        <td>multiset 或 multimap</td>
+    </tr>
+    <tr>
+        <td>特定值存在吗</td>
+        <td>find</td>
+        <td>binary_search</td>
+        <td>count</td>
+        <td>find</td>
+    </tr>
+    <tr>
+        <td>特定值存在吗? 若存在, 首个该值对象在哪</td>
+        <td>find</td>
+        <td>equal_range</td>
+        <td>find</td>
+        <td>find 或 lower_bound</td>
+    </tr>
+    <tr>
+        <td>首个不超过特定值的对象在哪</td>
+        <td>find_if</td>
+        <td>lower_bound</td>
+        <td>lower_bound</td>
+        <td>lower_bound</td>
+    </tr>
+    <tr>
+        <td>首个某个特定值之后的对象在哪</td>
+        <td>find_if</td>
+        <td>upper_bound</td>
+        <td>upper_bound</td>
+        <td>upper_bound</td>
+    </tr>
+    <tr>
+        <td>具有特定值的对象有多少个</td>
+        <td>count</td>
+        <td>equal_range (然后 distance)</td>
+        <td>count</td>
+        <td>count</td>
+    </tr>
+    <tr>
+        <td>具有特定值的对象都在哪里</td>
+        <td>find (反复调用)</td>
+        <td>equal_range</td>
+        <td>equal_range</td>
+        <td>equal_range</td>
+    </tr>
+</table>
+
+有几个值得注意的点:
+
+1. 在针对排序区间的一栏中equal_range出现的次数异乎寻常的多, 因为它支持等价性测试则是非常自然的事情
+2. 第二行针对排序区间的表格单元中选择 equal_range 而不是 find 的原因是: equal_range 按对数时间运行
+3. multiset 和 multimap, 当想寻找第一个具有特定值的对象时 find 和 lower_bound 都能胜任, 通常情况下会使用 find 来完成这项工作, 但 find 并不保证一定标识出第一个具有此值的元素, 如果确实需要第一个具有特定值的对象, 那么应该使用 lower_bound 然后手工执行等价性测试
