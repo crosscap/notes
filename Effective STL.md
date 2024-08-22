@@ -2150,3 +2150,110 @@ vw.insert(upper_bound(vw.begin(), vw.end(), w), w);
 1. 在针对排序区间的一栏中equal_range出现的次数异乎寻常的多, 因为它支持等价性测试则是非常自然的事情
 2. 第二行针对排序区间的表格单元中选择 equal_range 而不是 find 的原因是: equal_range 按对数时间运行
 3. multiset 和 multimap, 当想寻找第一个具有特定值的对象时 find 和 lower_bound 都能胜任, 通常情况下会使用 find 来完成这项工作, 但 find 并不保证一定标识出第一个具有此值的元素, 如果确实需要第一个具有特定值的对象, 那么应该使用 lower_bound 然后手工执行等价性测试
+
+### 第46条: 考虑使用函数对象而不是函数作为 STL 算法的参数
+
+如果一个函数对象的operator()函数已经被声明为内联的 (或者通过 inline 显式地声明, 或者被定义在类定义的内部, 即隐式内联) 那么它的函数体将可以直接被编译器使用, 而不需要调用函数, 这样可以提高程序的性能; 而如果一个函数被传递给一个算法, 由于 C/C++ 是通过函数指针来传递函数的, 所以在算法内调用函数的时候, 编译器都会产生一个间接的函数调用, 因为大多数编译器不会试图对通过函数指针执行的函数调用进行内联优化.
+
+C++ 的 sort 算法就性能而言总是优于 C 的 qsort 的原因和上面所说的原因是一样的.
+
+还有另一个与效率完全无关的理由使得函数对象为 STL 算法的参数更好: 必须让你的程序正确地通过编译; 由于种种原因, STL 平台可能会拒绝一些完全合法的代码, 将函数改为函数对象是解决这个问题的一种方法.
+
+```cpp
+set<string> s;
+...
+transform(s.begin(), s.end(), ostream_iterator<string>(cout, "\n"), mem_fun_ref(&string::size));
+```
+
+问题的原因在于, 有些 STL 平台在处理 const 成员函数时候有一个错误, 一种解决办法是用函数对象来取代相应的函数:
+
+```cpp
+class StringSize:
+    public unary_function<string, string::size_type>
+{
+public:
+    string::size_type operator()(const string& s) const
+    {
+        return s.size();
+    }
+};
+```
+
+函数对象优先于函数的第三个理由是: 这样做有助于避免一些微妙的, 语言本身的缺陷, 例如, 当一个函数模板的实例化名称并不完全等同于一个函数的名称时, 就可能会出现这样的问题.
+
+```cpp
+template<typename FPType>
+FPType average(FPType val1, FPType val2)
+{
+    return (val1 + val2) / 2;
+}
+
+template<typename InputIter1, typename InputIter2>
+void writeAverages(InputIter1 begin1, InputIter1 end1, InputIter2 begin2, ostream& s)
+{
+    transform(begin1, end1, begin2, ostream_iterator<typename iterator_traits<InputerIter1>::value_type>(s, "\n"), average<typename iterator_traits<InputerIter1>::value_type>);    // wrong?
+}
+```
+
+许多编译器都可以接受这段代码, 但是 C++ 标准却不认同这样的代码, 因为在理论上可能存在另一个名为 average 的函数模板， 这样表达式 `average<typename iterator_traits <InputIter1>::value_type>` 就会有二义性, 为了避免这种二义性, 可以使用函数对象:
+
+```cpp
+template<typename FPType>
+struct Average:
+    public binary_function<FPType, FPType, FPType>
+{
+    FPType operator()(FPType val1, FPType val2) const
+    {
+        return (val1 + val2) / 2;
+    }
+};
+
+template<typename InputIter1, typename InputIter2>
+void writeAverages(InputIter1 begin1, InputIter1 end1, InputIter2 begin2, ostream& s)
+{
+    transform(begin1, end1, begin2, ostream_iterator<typename iterator_traits<InputerIter1>::value_type>(s, "\n"), Average<typename iterator_traits<InputerIter1>::value_type>());
+}
+```
+
+因此以函数对象作为 STL 算法的参数提供了包括效率, 稳定可靠在内的多种优势.
+
+### 第47条: 避免产生 "只写型" (write-only) 的代码
+
+"只写型" 代码是指某些代码虽然很容易编写, 但是难以阅读和理解, 因为它是由某些基本想法自然而形成的, 解决的办法往往是将复杂语句分解成更易于理解的简单语句, 并且适当加上一些注释.
+
+例如, 假定有一个vector\<int\>, 现在想删除其中所有其值小于x的元素, 但在最后一个其值不小于y的元素之前的所有元素都应该保留下来, 可以写出如下代码:
+
+```cpp
+vector<int> v;
+int x, y;
+...
+v.erase(
+    remove_if(find_if(v.rbegin(), v.rend(),
+            bind2nd(greater_equal<int>(), y)).base(),
+        v.end(),
+        bind2nd(less<int>(), x)),
+    v.end());
+```
+
+这样的代码有两处问题:
+
+1. 过于复杂的嵌套函数调用
+2. 若要理解这条语句, 必须有很强的STL背景才行
+    - 使用了 STL 中 find 和 remove 算法的 _if 形式
+    - 用了 reverse_iterator
+    - 将 reverse_iterator 转换为 iterator
+    - 使用了 bind2nd
+    - 创建了匿名的函数对象
+    - 使用了 erase-remove 习惯用法
+
+为了增强代码的可读性, 可以将这段代码分解为几个步骤:
+
+```cpp
+typedef vector<int>::iterator VecIntIter;
+
+VecIntIter reangBegin = find_if(v.rbegin(), v.rend(), bind2nd(greater_equal<int>(), y)).base();
+
+v.erase(remove_if(reangBegin, v.end(), bind2nd(less<int>(), x)), v.end());
+```
+
+在软件工程领域中有这样一条真理: 代码被阅读的次数远远大于它被编写的次数, 也就是说, 软件的维护过程通常比开发过程需要消耗更多的时间, 所以在编写代码的时候, 应该尽量使代码易于阅读, 以便于后续的维护.
