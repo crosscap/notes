@@ -2257,3 +2257,14 @@ v.erase(remove_if(reangBegin, v.end(), bind2nd(less<int>(), x)), v.end());
 ```
 
 在软件工程领域中有这样一条真理: 代码被阅读的次数远远大于它被编写的次数, 也就是说, 软件的维护过程通常比开发过程需要消耗更多的时间, 所以在编写代码的时候, 应该尽量使代码易于阅读, 以便于后续的维护.
+
+### 第48条: 总是包含 (#include) 正确的头文件
+
+任何时候只要你引用了 std 名字空间中的元素, 你就有责任包含 (#include) 正确的头文件.
+
+为了帮助你记住什么时候需要包含哪些头文件, 下面总结了每个与 STL 有关的标准头文件中所包含的内容:
+
+- 几乎所有的标准STL容器都被声明在与之同名的头文件中, 比如vector被声明在\<vector\>中, 但是\<set\>和\<map\>是个例外, \<set\>中声明了 set 和 multiset, \<map\>中声明了 map 和 multimap
+- 除了4个 STL 算法以外, 其他所有的算法都被声明在\<algorithm\>中, 它们是 accumulate, inner_product, adjacent_difference 和 partial_sum (这4个算法被声明在\<numeric\>中)
+- 特殊类型的迭代器, 包括 istream_iterator 和 istreambuf_iterator, 被声明在\<iterator\>中
+- 标准的函数子 (比如 less\<T\>) 和函数子配接器 (比如 bind2nd, not1) 被声明在\<functional\>中
