@@ -2268,3 +2268,26 @@ v.erase(remove_if(reangBegin, v.end(), bind2nd(less<int>(), x)), v.end());
 - 除了4个 STL 算法以外, 其他所有的算法都被声明在\<algorithm\>中, 它们是 accumulate, inner_product, adjacent_difference 和 partial_sum (这4个算法被声明在\<numeric\>中)
 - 特殊类型的迭代器, 包括 istream_iterator 和 istreambuf_iterator, 被声明在\<iterator\>中
 - 标准的函数子 (比如 less\<T\>) 和函数子配接器 (比如 bind2nd, not1) 被声明在\<functional\>中
+
+### 第49条: 学会分析与 STL 相关的编译器诊断信息
+
+错误信息往往会引用其他的模板, 如与 string 有关的错误诊断信息中提到了这样的类型:
+
+```cpp
+std::basic_string<char, std::char_traits<char>, std::allocator<char> >
+```
+
+将上述类型全局替换为 string, 就可以得到一个更容易理解的错误信息.
+
+错误信息也会将隐式使用的类型等显式地表示出来, 例如, `map<string, string>` 往往会被显示为 `std::map<class string, class string, struct std::less<class string>, class std::allocator<class string> >`.
+
+另外, STL 中经常使用 STL 内部使用的模板 (如 _Tree), 对于此类情况, 完全可忽略传递给这些模板的内容.
+
+下面是一些其他的技巧:
+
+- vector 和 string 的迭代器通常就是指针, 所以当错误地使用了 iterator 的时候, 编译器的诊断信息中可能会引用到指针类型
+- 如果诊断信息中提到了 back_insert_iterator, front_insert_iterator 或者 insert_iterator, 则几乎总是意味着你错误地调用了 back_inserter, front_inserter 或 inserter (back_inserter 返回一个 back_insert_iterator对象, 其他情况类似), 如果你并没有直接调用这些函数, 则一定是你所调用的某个函数直接或者间接地调用了这些函数
+- 类似地, 如果诊断信息中提到了 binder1st 或者 binder2nd, 那么你可能是错误地使用了 bind1st 和 bind2nd
+- 输出迭代器 (如 ostream_iterator, ostreambuf_iterator 以及那些由 back_inserter, front_inserter 和 inserter 函数返回的迭代器) 在赋值操作符内部完成其输出或者插入工作, 所以如果在使用这些迭代器的时候犯了错误, 那么你所看到的错误消息中可能会提到与赋值操作符有关的内容
+- 如果得到的错误消息来源于某一个 STL 算法的内部实现, 那也许是在调用算法的时候使用了错误的类型
+- 如果正在使用一个很常见的STL组件, 但是从错误消息来看编译器好像对此一无所知, 那么可能是没有包含相应的头文件
