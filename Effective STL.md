@@ -2299,3 +2299,77 @@ std::basic_string<char, std::char_traits<char>, std::allocator<char> >
 - SGI STL 站点: [http://www.sgi.com/tech/stl/]
 - STLport 站点: [http://www.stlport.org]
 - Boost 站点: [http://www.boost.org]
+
+## 附录
+
+### 附录 A: 地域性与忽略大小写的字符串比较
+
+不通过提供 traits 参数实例化 basic_string 来实现地域性与忽略大小写的字符串比较的原因:
+
+- 将难以完成 I/O 工作, 至少在不付出相当代价的情况下你做不到
+- 是否忽略大小写并不是这个对象的问题, 而是牵扯到你如何使用这个对象的问题
+- 这样做并不合适: 忽略大小写的比较其实跟 traits 并没有关系
+- 这样做还不够: 当你需要使用非成员的泛型算法, 这样做还不足以解决问题
+
+一个更好的, 也更加吻合标准库设计思想的解决方案是, 只有在需要的时候才使用忽略大小写的比较, 如果你需要按照大小写无关的方式对一组字符串进行排序的话, 那么你只需提供一个适当的比较函数对象即可:
+
+```cpp
+
+std::sort(C.begin(), C.end(), compare_without_case);
+```
+
+#### 最先考虑的方案
+
+C++ 默认的字符串比较规则是字典序, 如果 x 和 y 的类型都是 std::string 的话, 那么 x < y 等价于下面的表达式:
+
+```cpp
+std::lexicographical_compare(x.begin(), x.end(), y.begin(), y.end());
+```
+
+为了用 lexicographical_compare 来实现忽略大小写的字符串比较操作, 我们只需将它与一个函数对象组合起来使用, 为了实现忽略大小写的字符比较操作, 一般的思路是先把两个字符都转换成大写字符:
+
+```cpp
+struct it_nocase:
+    public std::binary_function<char, char, bool>
+{
+    bool operator()(char x, char y) const
+    {
+        return std::toupper(static_cast<unsigned char>(x)) < std::toupper(static_cast<unsigned char>(y));
+    }
+};
+```
+
+上面这段代码差不多是正确的, 但不能解决地域性的问题.
+
+#### 地域性
+
+C 语言标准库中使用一个全局变量 `LC_ALL` 解决此问题.
+
+#### C++中的地域性
+
+C++ 标准库中的地域性并不是固定在库实现内部的一个全局数据, 它是一个类型为 std::locale 的对象, 可以创建 std::locale 对象, 并且将它传递给你要调用的函数.
+
+```cpp
+std::locale L = std::locale::classic();
+```
+
+C++ 中的地域被划分成多个平面 (facet), 每个平面对应于国际化过程中的某一个方面, 函数 std::use_facet 可以从一个地域对象中提取出一个特定的平面.
+
+如果 c1 和 c2 都是 char 类型的对象，那么下面的代码片断将按照适合于地域L的方式进行忽略大小写的比较:
+
+```cpp
+const std::ctype<char>& ct = std::use_facet<std::ctype<char>>(L);
+bool result = ct.toupper(c1) < ct.toupper(c2);
+```
+
+#### 插入语: 另一个平面 (collate 平面)
+
+#### 忽略大小写的字符串比较
+
+#### 总结
+
+我们可以总结出以下的结论:
+
+- 忽略大小写的字符串类并不是一个正确的抽象目标. C++ 标准库中的泛型算法都是按照策略来进行参数化的, 你应该充分利用这种特性
+- 字典序的字符串比较操作是建立在字符比较的基础上的, 一旦你得到了一个忽略大小写的字符比较函数对象, 则问题就解决了
+- 忽略大小写的字符比较问题比表面上看起来的要困难得多, 除非是在特定地域的环境中, 否则这个问题是没有意义的, 所以字符比较函数对象需要保存地域信息
