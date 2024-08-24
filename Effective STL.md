@@ -2291,3 +2291,11 @@ std::basic_string<char, std::char_traits<char>, std::allocator<char> >
 - 输出迭代器 (如 ostream_iterator, ostreambuf_iterator 以及那些由 back_inserter, front_inserter 和 inserter 函数返回的迭代器) 在赋值操作符内部完成其输出或者插入工作, 所以如果在使用这些迭代器的时候犯了错误, 那么你所看到的错误消息中可能会提到与赋值操作符有关的内容
 - 如果得到的错误消息来源于某一个 STL 算法的内部实现, 那也许是在调用算法的时候使用了错误的类型
 - 如果正在使用一个很常见的STL组件, 但是从错误消息来看编译器好像对此一无所知, 那么可能是没有包含相应的头文件
+
+### 第50条: 熟悉与 STL 相关的 Web 站点
+
+注意: 本条可能已经过时
+
+- SGI STL 站点: [http://www.sgi.com/tech/stl/]
+- STLport 站点: [http://www.stlport.org]
+- Boost 站点: [http://www.boost.org]
