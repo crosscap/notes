@@ -15,6 +15,7 @@ Some notes when I learn something new.
 - [ ] Computer Security Fundamentals
 - [ ] Computer Security Principles and Practice
 - [x] Effective STL
+- [ ] Effective C++
 
 ### history
 
