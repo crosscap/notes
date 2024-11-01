@@ -31,3 +31,82 @@
 要记住的是:
 
 > C++ 高效编程守则视情况而变化, 这取决于你使用 C++ 的哪一部分
+
+### 02 尽量以 const, enum, inline 替换 #define
+
+换句话说, 尽量以编译器替换预处理器, 以便获得更好的错误信息, 以及更好的调试支持, 并可能生成更小的目标代码
+
+有两种值得提出的特殊情况:
+
+对于指向常量的常量指针, 需要向下面这样定义:
+
+```cpp
+const char * const authorName = "Scott Meyers";
+```
+
+const 出现了两次, 此外, string 对象比 char*-based 字符串更好
+
+```cpp
+const std::string authorName("Scott Meyers");
+```
+
+对于 class 专属常量, 一般情况下它们是 static的
+
+```cpp
+class GamePlayer {
+private:
+    static const int NumTurns = 5;  // 常量声明式
+    int scores[NumTurns];           // 使用常量
+};
+```
+
+这里的 NumTurns 是一个声明式, 而非定义式, 只要不取其地址就可以声明并使用而不需要定义, 但是若需要取其地址, 则需要定义
+
+```cpp
+const int GamePlayer::NumTurns; // 定义 NumTurns
+```
+
+这个式子需要放进实现分件而非头文件中
+
+这种 class 专属常量是 #define 无法实现的, 因为 #define 无法提供封装性
+
+对旧式的编译器, 无法对 static 成员变量进行初始化, 需要如下处理:
+
+```cpp
+class CostEstimate {
+private:
+    static const double FudgeFactor;            // 声明式, 位于头文件内
+};
+const double CostEstimate::FudgeFactor = 1.35;  // 定义式, 位于实现文件内
+```
+
+更特殊的情况需要使用 enum hack 补偿方法
+
+```cpp
+class GamePlayer {
+private:
+    enum { NumTurns = 5 };  // NumTurns 是 5 的一个符号名称
+    int scores[NumTurns];   // 使用 NumTurns
+};
+```
+
+学习 enum hack 有如下两个原因:
+
+1. enum hack 和 #define 行为上比较相似, 可能这是你想要的
+2. enum hack 作为一种技术, 在许多代码中都有使用, 你需要理解它
+
+对于使用 #define 来实现宏的代码, 可以使用 template inline 函数来替代
+
+```cpp
+#define CALL_WITH_MAX(a, b) f((a) > (b) ? (a) : (b))
+
+template<typename T>
+inline void callWithMax(const T& a, const T& b) {
+    f(a > b ? a : b);
+}
+```
+
+要记住的是:
+
+> 对于常量, 最好使用 const 对象或者 enum 而非 #define
+> 对于形似函数的宏, 最好使用 inline 函数而非 #define
