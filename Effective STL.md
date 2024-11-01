@@ -15,6 +15,23 @@
     - map
     - multimap
 
+### 顺序容器操作表
+
+|            | vector | deque | string | list  | forward_list | array |
+| :--------: | :----: | :---: | :----: | :---: | :----------: | :---: |
+| push_back  |   √    |   √   |   √    |   √   |              |       |
+| push_front |        |   √   |        |   √   |      √       |       |
+|  instert   |   √    |   √   |   √    |   √   |   special    |       |
+|    back    |   √    |   √   |   √    |   √   |              |   √   |
+|   front    |   √    |   √   |   √    |   √   |      √       |   √   |
+|     []     |   √    |   √   |   √    |       |              |   √   |
+|     at     |   √    |   √   |   √    |       |              |   √   |
+|  pop_back  |   √    |   √   |   √    |   √   |              |       |
+| pop_front  |        |   √   |        |   √   |      √       |       |
+|   erase    |   √    |   √   |   √    |   √   |   special    |       |
+
+此表总结自 C++ Primer, 5th Edition, Stanley B. Lippman, Josée Lajoie, Barbara E. Moo, Addison-Wesley, 2013. 支持 C++11 标准.
+
 ### 迭代器
 
 - 针对输入输出流的迭代器
