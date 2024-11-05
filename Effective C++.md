@@ -110,3 +110,108 @@ inline void callWithMax(const T& a, const T& b) {
 
 > 对于常量, 最好使用 const 对象或者 enum 而非 #define
 > 对于形似函数的宏, 最好使用 inline 函数而非 #define
+
+### 03 尽量使用 const
+
+const 可用于如下场景:
+
+- 在 class 外部修饰 global 或者 namespace 作用域的常量
+- 修饰文件, 函数, block 作用域的被声明为 static 的对象
+- 在 class 内部修饰 static 或者 non-static 成员变量
+- 对于指针, const 可以修饰指针本身, 也可以修饰指针所指物, 甚至两者都可以修饰
+
+如果 const 出现在 \* 左侧, 则表示指针所指物是常量, 如果 const 出现在 \* 右侧, 则表示指针本身是常量, 如果两者都出现, 则表示指针本身和指针所指物都是常量, 修饰所指物时下面两种写法是等价的:
+
+```cpp
+const char * authorName = "Scott Meyers";
+char const * authorName = "Scott Meyers";
+```
+
+STL 迭代器是指针的 generalization, 所以迭代器就像一个 T\* 指针, 声明迭代器为 const 就像声明指针为 const (即 T\* const), 而非声明指针所指物为 const (即 const T\*), 如果希望迭代器所指物为 const, 需要使用 const_iterator
+
+```cpp
+std::vector<int> vec;
+...
+const std::vector<int>::iterator iter = vec.begin();  // iter 的内容不可变
+std::vector<int>::const_iterator cIter = vec.begin(); // cIter 所指物不可变
+```
+
+const 可以和函数的返回值, 参数, 函数自身 (需要是成员函数) 产生关系
+
+const 用于返回值和参数可以避免某些错误, 作用和修饰常量类似
+
+#### const 成员函数
+
+const 作用于成员函数是为了该成员函数可作用于 const 对象
+
+两个成员函数如果只是 const 和非 const 的区别则可以重载
+
+```cpp
+class TextBlock {
+public:
+    ...
+    const char& operator[](std::size_t position) const
+    {
+        return text[position];
+    }
+    char& operator[](std::size_t position)
+    {
+        return text[position];
+    }
+private:
+    std::string text;
+};
+```
+
+对 const 成员函数的理解有两种, bitwise const 和 logical const, C++ 采用 bitwise const
+
+const 的对象不允许改变对象内的任何成员变量 (static 成员变量除外), 当有需要使 const 对象的某些值可以被修改时, 可以使用 mutable 修饰
+
+```cpp
+class TextBlock {
+public:
+    ...
+private:
+    std::string text;
+    mutable std::size_t textLength;
+    mutable bool lengthIsValid;
+    std::size_t computeTextLength() const
+    {
+        if (!lengthIsValid) {
+            textLength = text.size();
+            lengthIsValid = true;
+        }
+        return textLength;
+    }
+};
+```
+
+#### 在 const 和 non-const 成员函数中避免重复
+
+在 non-const 成员函数中调用 const 成员函数并进行转型是避免代码重复的一种方法
+
+```cpp
+class TextBlock {
+public:
+    ...
+    const char& operator[](std::size_t position) const
+    {
+        ... // 边界检查, 志记数据访问, 检验数据有效性等
+        return text[position];
+    }
+    char& operator[](std::size_t position)
+    {
+        return const_cast<char&>(                           // 将 op[] 返回值的 const 属性移除
+            static_cast<const TextBlock&>(*this)[position]  // 为 this 添加 const 属性, 调用 const 成员函数
+            // static_cast<const TextBlock&>(*this).operator[](position)  函数调用形式
+        );
+    }
+...
+};
+```
+
+总结:
+
+> 将某些东西声明为 const 可帮助编译器侦测出错误用法, const 可被施加于任何作用域内的对象, 函数参数, 函数返回值, 成员函数本体
+> 编译器强制实施 bitwise const, 但编写程序时应该遵循 conceptual constness
+> 当 const 和 non-const 成员函数有着实质等价的实现时, 令 non-const 版本调用 const 版本可避免代码重复
