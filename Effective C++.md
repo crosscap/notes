@@ -215,3 +215,62 @@ public:
 > 将某些东西声明为 const 可帮助编译器侦测出错误用法, const 可被施加于任何作用域内的对象, 函数参数, 函数返回值, 成员函数本体
 > 编译器强制实施 bitwise const, 但编写程序时应该遵循 conceptual constness
 > 当 const 和 non-const 成员函数有着实质等价的实现时, 令 non-const 版本调用 const 版本可避免代码重复
+
+### 04 确保对象使用前已被初始化
+
+对于 C part of C++ 初始化可能导致运行期成本时, 不保证发生初始化, 对于 non-C part of C++ 最好的办法是永远在对象被使用前进行初始化
+
+对于无任何成员的内置类型需要手动完成, 对于内置类型以外的东西, 初始化由构造函数完成, 规则是: 确保每一个构造函数都将对象的每一个成员初始化, 同时注意区分成员初始化和赋值操作
+
+```cpp
+class PhoneNumber
+{
+    ...
+};
+class ABEntry
+{
+public:
+    ABEntry(const std::string& name, const std::string& address, const std::list<PhoneNumber>& phones);
+
+private:
+    std::string theName;
+    std::string theAddress;
+    std::list<PhoneNumber> thePhones;
+    int numTimesConsulted;
+};
+
+ABEntry::ABEntry(const std::string& name, const std::string& address, const std::list<PhoneNumber>& phones)
+{
+    theName = name;         // 赋值操作
+    theAddress = address;   // 赋值操作
+    thePhones = phones;     // 赋值操作
+    numTimesConsulted = 0;  // 赋值操作
+}
+```
+
+由于 C++ 规定对象的初始化操作发生在构造函数体执行之前, 所以使用成员初始化列表 (member initialization list) 是更好的选择, 这样做结果相同但通常效率更高
+
+```cpp
+ABEntry::ABEntry(const std::string& name, const std::string& address, const std::list<PhoneNumber>& phones)
+    : theName(name), theAddress(address), thePhones(phones), numTimesConsulted(0)
+{
+    // 成员初始化
+}
+```
+
+内置类型也可以使用成员初始化列表, 并且当使用 default 构造函数时, 也可以使用成员初始化列表, 只要指定 nothing 作为参数即可
+
+如果成员是 const 或者 reference 类型, 则必须使用成员初始化列表
+
+C++ 的成员初始化次序是固定的: 先完成基类的初始化, 随后按照声明次序完成成员的初始化, 即使在成员初始化列表中的次序和声明次序不同, 也是按照声明次序初始化
+
+non-local static 对象指的是 global 对象和 namespace 作用域内的对象, 以及 class 内和 file 作用域内的 static 对象, 函数内的 static 对象属于 local static 对象
+
+编译单元指的是产出单一目标文件的源文件, 基本上指的是单一源码文件加上其包含的头文件
+
+为解决不同编译单元中定义之 non-local static 对象的初始化次序问题, 可以将每个 non-local static 对象搬到一个独立函数中, 该函数返回一个 reference 指向该对象, 然后用户调用该函数, 这是 Singleton 模式的一种实现
+
+总结:
+> 为内置类型对象进行手工初始化
+> 构造函数最好使用成员初始化列表, 而非赋值操作, 成员初始化次序和声明次序相同
+> 为避免 non-local static 对象之初始化次序问题, 使用 local static 对象替代 non-local static 对象
