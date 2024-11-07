@@ -274,3 +274,31 @@ non-local static 对象指的是 global 对象和 namespace 作用域内的对�
 > 为内置类型对象进行手工初始化
 > 构造函数最好使用成员初始化列表, 而非赋值操作, 成员初始化次序和声明次序相同
 > 为避免 non-local static 对象之初始化次序问题, 使用 local static 对象替代 non-local static 对象
+
+## 2 构造, 析构, 赋值运算
+
+### 05 了解 C++ 默默编写并调用哪些函数
+
+C++ 会自动声明一个 copy 构造函数, 一个 copy 赋值运算符, 一个析构函数, 如果没有声明任何构造函数, 则 C++ 会自动声明一个默认构造函数, 所有这些函数都是 public 和 inline 的
+
+所以下面两段代码是类似的:
+
+```cpp
+class Empty {};
+
+class Empty {
+public:
+    Empty() {}
+    Empty(const Empty& rhs) {}
+    ~Empty() {}
+    Empty& operator=(const Empty& rhs) {}
+};
+```
+
+注意, 编译器提供的析构函数是 non-virtual 的, 除非基类的析构函数是 virtual 的
+
+当类中有 reference 或者 const 成员时, 编译器不会自动生成 copy 赋值运算符, 当 base 类的 copy 赋值运算符是 private 时, 编译器不会自动生成 derived 类的 copy 赋值运算符
+
+总结:
+
+> 编译器可以为 class 创建 default 构造函数, copy 构造函数, copy 赋值运算符, 析构函数
