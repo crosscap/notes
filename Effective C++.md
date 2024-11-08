@@ -302,3 +302,38 @@ public:
 总结:
 
 > 编译器可以为 class 创建 default 构造函数, copy 构造函数, copy 赋值运算符, 析构函数
+
+### 06 若不想使用编译器自动生成的函数, 就该明确拒绝
+
+如果不希望编译器自动生成的函数被使用, 可以将其声明为 private 并且不予实现, 用户如果使用这些函数则会得到编译期错误, 而 member 函数和 friend 函数会导致链接期错误
+
+通过设计一个 base class, 并将其 copy 构造函数和 copy 赋值运算符声明为 private, 可以防止 derived class 生成这两个函数, 从而将错误移至编译期
+
+```cpp
+class Uncopyable {
+protected:
+    Uncopyable() {}
+    ~Uncopyable() {}
+private:
+    Uncopyable(const Uncopyable&);
+    Uncopyable& operator=(const Uncopyable&);
+};
+```
+
+boost::noncopyable 是一个类似的类
+
+总结:
+
+> 为驳回编译器自动提供的函数, 可以将相应的成员函数声明为 private 并且不予实现, Uncopyable 这样的 base class 也可以达到这个目的
+
+补充: 至少在 C++11 之后, 可以使用 delete 关键字来达到相同的目的
+
+```cpp
+class Uncopyable {
+public:
+    Uncopyable() = default;
+    ~Uncopyable() = default;
+    Uncopyable(const Uncopyable&) = delete;
+    Uncopyable& operator=(const Uncopyable&) = delete;
+};
+```
