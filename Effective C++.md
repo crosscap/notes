@@ -337,3 +337,30 @@ public:
     Uncopyable& operator=(const Uncopyable&) = delete;
 };
 ```
+
+### 07 为多态基类声明 virtual 析构函数
+
+给 base class 声明一个 virtual 析构函数后, 此后删除指向 derived class 对象的 base class 指针时, 会调用 derived class 的析构函数, 如果 base class 的析构函数不是 virtual 的, 则不会调用 derived class 的析构函数, 会导致资源泄漏
+
+如果一个 class 带有任何 virtual 函数, 它就应该拥有一个 virtual 析构函数, 而 base class 没有 virtual 函数时, 往往代表它不会被当作 base class 使用, 所以不需要 virtual 析构函数, 否则会因为生成一个 virtual table 而增加空间开销, 还导致无法同其他语言进行交互
+
+不要继承一个不带 virtual 析构函数的 class, 否则用指向 derived class 对象的 base class 指针删除对象时, 可能导致 derived class 的析构函数不被调用, 从而导致资源泄漏
+
+注: C++11 之后, 可以使用 final 关键字来阻止继承, final 既可以用于类, 也可以用于虚函数
+
+将析构函数声明为纯虚函数可以用于实现抽象基类
+
+```cpp
+class AWOV {
+public:
+    virtual ~AWOV() = 0;
+};
+AWOV::~AWOV() {}    // 必须提供定义
+```
+
+给 base class 声明一个 virtual 析构函数是为了 polymorphic base classes (带多态性质的基类), 即为了用 base class 接口处理 derived class 对象, 否则不需要 virtual 析构函数, 比如不被用于 base class 的 class 和提供某些特定功能的 class 如 06 的 Uncopyable
+
+总结:
+
+> polymorphic base classes 应该声明一个 virtual 析构函数, 如果 class 带有任何 virtual 函数, 它就应该拥有一个 virtual 析构函数
+> class 的设计目的如果不是作为 base class 使用, 或者不是为了具备多态性 (polymorphically), 就不应该声明 virtual 析构函数
