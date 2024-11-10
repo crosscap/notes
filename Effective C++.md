@@ -364,3 +364,73 @@ AWOV::~AWOV() {}    // 必须提供定义
 
 > polymorphic base classes 应该声明一个 virtual 析构函数, 如果 class 带有任何 virtual 函数, 它就应该拥有一个 virtual 析构函数
 > class 的设计目的如果不是作为 base class 使用, 或者不是为了具备多态性 (polymorphically), 就不应该声明 virtual 析构函数
+
+### 08 别让异常逃离析构函数
+
+为了处理析构函数中的异常有两种方法:
+
+如果析构函数内部抛出异常, 可以调用 std::abort 来终止程序
+
+```cpp
+class DBConnection {
+public:
+    ...
+    ~DBConnection()
+    {
+        try {
+            db.close();  // 关闭数据库连接
+        } catch (...) {
+            std::abort();  // 终止程序
+        }
+    }
+};
+```
+
+如果析构函数内部抛出异常, 在内部进行捕获处理, 即吞下异常, 尽管这样会压制 "某些任务失败" 的信息
+
+```cpp
+class DBConnection {
+public:
+    ...
+    ~DBConnection() noexcept(false)  // noexcept(false) 表示析构函数可能抛出异常
+    {
+        try {
+            db.close();  // 关闭数据库连接
+        } catch (...) {
+            // 如果 db.close() 抛出异常, 则不要让异常逃离析构函数
+            ...
+        }
+    }
+};
+```
+
+还有一种方法是重新设计接口, 使其用户有机会对可能出现的问题做出反应, 比如提供一个 close 函数, 使用户可以在析构函数之前调用 close 函数
+
+```cpp
+class DBConn {
+public:
+    ...
+    void close()
+    {
+        db.close();
+        closed = true;
+    }
+    ~DBConn()
+    {
+        if (!closed) {
+            try {
+                db.close();  // 关闭数据库连接
+            } catch (...) {
+                ...
+            }
+        }
+    }
+private:
+    DBConnection db;
+    bool closed;
+};
+```
+
+总结:
+> 析构函数绝对不要抛出异常, 如果一个被析构函数调用的函数可能抛出异常, 析构函数应该捕获任何异常, 然后吞下它们, 或者结束程序
+> 如果客户需要对某个操作函数出现的异常做出反应, 那么 class 应该提供一个普通函数 (如 close) 来执行该操作, 而不应该依赖析构函数来执行该操作
