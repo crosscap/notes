@@ -434,3 +434,50 @@ private:
 总结:
 > 析构函数绝对不要抛出异常, 如果一个被析构函数调用的函数可能抛出异常, 析构函数应该捕获任何异常, 然后吞下它们, 或者结束程序
 > 如果客户需要对某个操作函数出现的异常做出反应, 那么 class 应该提供一个普通函数 (如 close) 来执行该操作, 而不应该依赖析构函数来执行该操作
+
+### 09 绝不在构造和析构过程中调用 virtual 函数
+
+如果在构造函数或者析构函数中调用 virtual 函数, 会导致对象的类型是 base class 而非 derived class , 从而调用的是 base class 的 virtual 函数, 而非 derived class 的 virtual 函数
+
+C++ 中会先调用 base class 的构造函数, 再调用 derived class 的构造函数, 而析构函数的调用顺序相反, 这样在 base class 的构造函数和析构函数执行时, derived class 的成员变量还未初始化或已经析构, 所以在此时对象的类型是 base class 而非 derived class, 此时的运行期类型信息也是 base class 而非 derived class
+
+由于无法使用 virtual 函数从 base class 向下调用, 在构造期间需要令 derived class 将必要的信息向上传递至 base class 的构造函数
+
+```cpp
+class Transaction
+{
+public:
+    explicit Transaction(const std::string& logInfo);
+    // virtual void logTransaction() const = 0;
+    void logTransaction(const std::string& logInfo) const;  // 非 virtual 函数
+    ...
+};
+
+Transaction::Transaction(const std::string& logInfo)
+{
+    ...
+    logTransaction(logInfo);
+}
+
+class BuyTransaction : public Transaction
+{
+public:
+    BuyTransaction(parameters);
+    // virtual void logTransaction() const; // 现在不需要此函数
+    ...
+private:
+    static std::string createLogString(parameters);
+};
+
+BuyTransaction::BuyTransaction(parameters)
+    : Transaction(createLogString(parameters))
+{
+    ...
+}
+```
+
+注意 createLogString, 此函数也相对于将 parameters 传递给 base class 的构造函数更加简洁, 也更具可读性, 它是 static 的, 这样就不会意外指向 derived class 的成员变量
+
+总结:
+
+> 在构造和析构期间不要调用 virtual 函数, 因为这类调用不会下降至 derived class
