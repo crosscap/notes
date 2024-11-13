@@ -481,3 +481,35 @@ BuyTransaction::BuyTransaction(parameters)
 总结:
 
 > 在构造和析构期间不要调用 virtual 函数, 因为这类调用不会下降至 derived class
+
+### 10 令 operator= 返回一个 reference to `*this`
+
+为了支持连锁赋值, 赋值运算符应该返回一个 reference 指向操作符的左侧实参, 也就是 `*this`, 对于其他赋值运算符也应该如此
+
+```cpp
+class Widget {
+public:
+    ...
+    Widget& operator=(const Widget& rhs)
+    {
+        ...
+        return *this;
+    }
+    ...
+    Widget& operator+=(const Widget& rhs)
+    {
+        ...
+        return *this;
+    }
+    ...
+    Widget& operator=(int rhs)
+    {
+        ...
+        return *this;
+    }
+    ...
+};
+```
+
+总结:
+> 令赋值运算符返回一个 reference to `*this`
