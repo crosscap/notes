@@ -513,3 +513,87 @@ public:
 
 总结:
 > 令赋值运算符返回一个 reference to `*this`
+
+### 11 在 operator= 中处理"自我赋值"
+
+如果运用 Tips 13 和 14, 运用对象管理资源, 则可以确定所谓的 "资源管理对象" 在 copy 时有正确的举措, 但如果是尝试自行管理资源, 则需要处理 "自我赋值" 问题, 否则可能遇到 "在停止使用资源前删除资源" 的问题
+
+```cpp
+class Bitmap { ... };
+class Widget {
+public:
+    ...
+    Widget& operator=(const Widget& rhs)
+    {
+        // 会导致资源泄漏的代码
+        delete pb;
+        pb = new Bitmap(*rhs.pb);
+        return *this;
+    }
+    ...
+private:
+    Bitmap* pb;
+};
+```
+
+可以最开始加上 `if (this == rhs) return *this;` 可以部分解决问题, 但是不具备异常安全性, 但解决了异常安全性的同时往往可以解决 "自我赋值" 问题
+
+```cpp
+class Widget {
+public:
+    ...
+    Widget& operator=(const Widget& rhs)
+    {
+        Bitmap* pOrig = pb;
+        pb = new Bitmap(*rhs.pb);
+        delete pOrig;
+        return *this;
+    }
+    ...
+};
+```
+
+为关注效率问题, 可以把 "证同测试" 放在赋值操作的最开始, 但由于自我赋值的概率不高, 且证同测试会引入诸如控制流和代码大小等开销, 所以不建议这样做
+
+使用 copy and swap 技术也可以解决 "自我赋值" 问题
+
+```cpp
+class Widget {
+public:
+    ...
+    Widget& operator=(const Widget& rhs)
+    {
+        Widget temp(rhs);
+        swap(temp);
+        return *this;
+    }
+    ...
+    void swap(Widget& other)
+    {
+        using std::swap;
+        swap(pb, other.pb);
+    }
+    ...
+};
+```
+
+由于某 class 的 copy assignment 操作符可能被声明为以 by value 的方式接受参数, 并且以 by value 方式传递东西会造成一份副本, 所以也可以写成如下形式
+
+```cpp
+class Widget {
+public:
+    ...
+    Widget& operator=(Widget rhs)
+    {
+        swap(rhs);
+        return *this;
+    }
+    ...
+};
+```
+
+这样做有些牺牲清晰性, 但可能使编译器产生更高效的代码
+
+总结:
+> 确保当对象自我赋值时 operator= 有正确的行为, 其中的技术包括 "证同测试", 经过设计的语句顺序 和 copy-and-swap
+> 确定任何函数如果操作一个以上的对象, 而其中多个对象是同一个对象时, 该函数的行为仍然正确
