@@ -597,3 +597,58 @@ public:
 总结:
 > 确保当对象自我赋值时 operator= 有正确的行为, 其中的技术包括 "证同测试", 经过设计的语句顺序 和 copy-and-swap
 > 确定任何函数如果操作一个以上的对象, 而其中多个对象是同一个对象时, 该函数的行为仍然正确
+
+### 12 复制对象时勿忘其每一个成分
+
+copy 构造函数, copy 赋值运算符统称为 copying 函数
+
+如果选择自己编写 copying 函数, 那么如果 class 内有些成员没有被复制, 编译器也不会给出警告, 在非标准形式的 operator= (如 operator+=) 中也要注意这个问题
+
+为 dirved class 编写 copying 函数时, 也要调用 base class 的 copying 函数
+
+```cpp
+class Base {
+public:
+    Base(const Base& rhs)
+        : mem1(rhs.mem1), mem2(rhs.mem2)
+    {}
+    Base& operator=(const Base& rhs)
+    {
+        mem1 = rhs.mem1;
+        mem2 = rhs.mem2;
+        return *this;
+    }
+private:
+    int mem1;
+    int mem2;
+};
+
+class Derived : public Base {
+public:
+    Derived(const Derived& rhs)
+        : Base(rhs), mem3(rhs.mem3), mem4(rhs.mem4)
+    {}
+    Derived& operator=(const Derived& rhs)
+    {
+        Base::operator=(rhs);
+        mem3 = rhs.mem3;
+        mem4 = rhs.mem4;
+        return *this;
+    }
+private:
+    int mem3;
+    int mem4;
+};
+```
+
+所以说复制每一个成分指的是, 当编写一个 copying 函数时:
+
+1. 复制所有 local 成员变量
+2. 调用所有 base class 的 适当的 copying 函数
+
+尽管 copy 构造函数和 copy 赋值运算符的实现往往相似, 但不能让它们其中的一个调用另一个来避免重复, 合理的做法是将共同的功能提取出来, 放在一个 private 函数 (往往命名为 init) 中, 然后两个 copying 函数都调用这个函数
+
+总结:
+
+> copying 函数应该确保复制对象内的所有成员变量和所有 base class 成分
+> 不要尝试以某个 copying 函数调用另一个 copying 函数, 应该将共同机制放在第三个函数中, 由两个 copying 函数共同调用
