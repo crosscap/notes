@@ -652,3 +652,49 @@ private:
 
 > copying 函数应该确保复制对象内的所有成员变量和所有 base class 成分
 > 不要尝试以某个 copying 函数调用另一个 copying 函数, 应该将共同机制放在第三个函数中, 由两个 copying 函数共同调用
+
+## 3 资源管理
+
+### 13 以对象管理资源
+
+把资源放进对象内, 依赖 C++ 的析构函数确保资源被释放
+
+注: 原书中介绍了 auto_ptr, 但是 auto_ptr 已经被 C++11 弃用, 用 unique_ptr 替代, 后文中的 auto_ptr 都替换为 unique_ptr
+
+```cpp
+void f()
+{
+    std::unique_ptr<Investment> pInv(createInvestment());
+    ...
+}  // pInv 被销毁, 资源被释放
+```
+
+这个例子示范了 "以对象管理资源" 的两个关键想法:
+
+- 获得资源后立刻放进管理对象内, 也被称为 "资源取得时机便是初始化时机" (Resource Acquisition Is Initialization, RAII)
+- 管理对象运用析构函数确保资源被释放, 尽管产生异常时事情有些棘手, 但条款 08 已经能够解决这个问题
+
+unique_ptr 确保只有一个指针指向资源, 如果对 unique_ptr 进行复制, 则会将资源的所有权转移
+
+注: 原书中介绍了 tr1::shared_ptr, 但是 shared_ptr 已经被 C++11 引入, 故后文中的 shared_ptr 都可代表 std::shared_ptr
+
+如果资源要求进行正常的复制, 则需要使用 shared_ptr, 它使用了引用计数技术, 缺点是无法检查环状引用
+
+```cpp
+void f()
+{
+    std::shared_ptr<Investment> pInv(createInvestment());
+    ...
+}  // pInv 被销毁, 资源被释放
+```
+
+由于 unique_ptr 和 shared_ptr 都使用 delete 来释放资源, 而非 delete[], 所以不能将 unique_ptr 和 shared_ptr 用于数组, 因为 vector 和 string 可以替代数组, 如果一定要使用, 可以使用自定义删除器, 或者使用 Boost 的 shared_array 和 scoped_array
+
+如果预制式的 unique_ptr 和 shared_ptr 不能满足需求, 可以制作自己的资源管理类, 但是要注意一些细节, 详见条款 14 和 15
+
+如果工厂函数直接返回一个未加工的指针, 则需要使用者注意调用 delete 或者将指针放入 unique_ptr 和 shared_ptr 改进接口可以防止上述情况, 详见条款 18
+
+总结:
+
+> 为防止资源泄漏, 使用 RAII 对象管理资源
+> 两个常被使用的 RAII class 是 unique_ptr 和 shared_ptr, shared_ptr 一般是较佳选择, 它的复制行为较为直观
