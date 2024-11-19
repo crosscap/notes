@@ -698,3 +698,52 @@ void f()
 
 > 为防止资源泄漏, 使用 RAII 对象管理资源
 > 两个常被使用的 RAII class 是 unique_ptr 和 shared_ptr, shared_ptr 一般是较佳选择, 它的复制行为较为直观
+
+### 14 在资源管理类中小心 copying 行为
+
+例如, 使用类管理互斥锁时会产生如下代码:
+
+```cpp
+class Lock {
+public:
+    explicit Lock(Mutex* pm)
+        : mutexPtr(pm)
+    {
+        lock(mutexPtr);
+    }
+    ~Lock()
+    {
+        unlock(mutexPtr);
+    }
+private:
+    Mutex* mutexPtr;
+};
+```
+
+但如果对象被复制则会产生不期望的结果, 为解决 "当一个 RAII 对象被复制时会发生什么事" 的问题, 有两种方法:
+
+- **禁止复制**: 对于 Lock 类, 禁止复制是合理的, 因为很少可以拥有 synchronization primitives 的复制, 条款 06 中介绍了如何禁止复制
+- **对底部资源引用计数**: 对于 shared_ptr, 采用引用计数技术, 只要内含一个 shared_ptr 成员变量, RAII class 就可以实现引用计数行为, 如果资源被释放时不希望将其删除而是其他动作, 则可以指定删除器
+
+```cpp
+class Lock {
+public:
+    explicit Lock(Mutex* pm)
+        : mutexPtr(pm, unlock)
+    {
+        lock(mutexPtr.get());
+    }
+private:
+    std::shared_ptr<Mutex> mutexPtr;
+};
+```
+
+- **复制底部资源**: 如果一份资源可以拥有多个副本, 这种情况下复制资源管理对象时, 还应该复制其所包覆的资源, 也就是 "深度复制"
+- **转移底部资源的所有权**: 如果在某些罕见情况下希望确保只有一个 RAII 对象拥有未加工资源, 即使被复制也是如此, 此时资源的所有权会从被复制的对象转移到目标的对象, 这时可以使用 unique_ptr
+
+Copying 函数有可能被编译器自动生成, 如果默认行为不合要求则需要自行编写
+
+总结:
+
+> 复制 RAII 对象必须一并复制它所管理的资源, 所以资源的 copying 行为决定 RAII 对象的 copying 行为
+> 普遍而常见的 RAII class *copying* 行为是 抑制 copying, 施行引用计数, 不过其他的行为也可能被实现
