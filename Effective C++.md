@@ -747,3 +747,74 @@ Copying 函数有可能被编译器自动生成, 如果默认行为不合要求�
 
 > 复制 RAII 对象必须一并复制它所管理的资源, 所以资源的 copying 行为决定 RAII 对象的 copying 行为
 > 普遍而常见的 RAII class *copying* 行为是 抑制 copying, 施行引用计数, 不过其他的行为也可能被实现
+
+### 15 在资源管理类中提供对原始资源的访问
+
+为访问某些 API 需要提供对原始资源的访问方法, 这时需要提供一个函数将 RAII class 对象转换为其所内含的原始资源, 有两个办法: 显式转换和隐式转换
+
+shared_ptr 和 unique_ptr 都提供了 get 函数, 用于执行显式转换, 也就是将返回智能指针内部的原始指针, 它们也重载了指针取值操作符 (operator-> 和 operator*), 它们允许隐式转换至底部原始指针
+
+```cpp
+class Investment {
+public:
+    bool isTaxFree() const;
+    ...
+};
+
+Investment* createInvestment();
+
+std::shared_ptr<Investment> pi1(createInvestment());
+
+bool taxable = !(pi1->isTaxFree());
+...
+std::unique_ptr<Investment> pi2(createInvestment());
+
+bool taxable = !((*pi2).isTaxFree());
+```
+
+提供隐式转换方法可以增加资源管理类的可用性
+
+```cpp
+FontHandle getFont();               // C API
+void releaseFont(FontHandle fh);    // C API
+
+class Font {
+public:
+    explicit Font(FontHandle fh)
+        : f(fh)
+    {}
+    ~Font()
+    {
+        releaseFont(f);
+    }
+    FontHandle get() const          // 显式转换
+    {
+        return f;
+    }
+    operator FontHandle() const     // 隐式转换
+    {
+        return f;
+    }
+};
+
+Font f(getFont());
+int newFontSize;
+...
+changeFontSize(f.get(), newFontSize);   // 显式转换
+changeFontSize(f, newFontSize);         // 隐式转换
+```
+
+但是隐式转换会增加错误发生的机会, 例如这个隐式转换可能在需要 Font 时创建一个 FontHandle
+
+```cpp
+Font f1(getFont());
+...
+FontHandle f2 = f1;  // 隐式转换
+```
+
+这会导致 f2 直接指向 f1 底层的资源, 一般会引发各种问题
+
+总结:
+
+> APIs 往往要求访问原始资源, 所以 RAII class 需要提供一个 "取得其所管理之原始资源" 的办法
+> 对原始资源的访问可能经由显式转换或隐式转换, 前者比较安全, 但后者比较方便
