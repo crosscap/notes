@@ -844,3 +844,43 @@ delete[] pal;  // 正确
 总结:
 
 > new 时使用 [] 分配内存, delete 时也要使用 []; new 时不使用 [], delete 时也不使用 []
+
+### 17 以独立语句将 newed 对象置入智能指针
+
+假定有如下代码:
+
+```cpp
+int priority();
+void processWidget(std::shared_ptr<Widget> pw, int priority);
+```
+
+如果直接调用:
+
+```cpp
+processWidget(new Widget, priority());
+```
+
+会导致编译错误, 因为 shared_ptr 的构造函数是 explicit 的, 不能隐式转换, 如下方式可以通过编译, 但可能导致资源泄漏
+
+```cpp
+processWidget(std::shared_ptr<Widget>(new Widget), priority());
+```
+
+编译器执行 processWidget 之前先做如下三件事:
+
+- 调用 priority
+- 执行 new Widget
+- 调用 shared_ptr 构造函数
+
+但是顺序是不固定的, 只能确定 new Widget 在 shared_ptr 构造函数前完成, 如果调用 priority 发生在第二个, 并且发生异常, new Widget 分配的内存将无法释放, 从而导致资源泄漏
+
+将语句分离可以避免这个问题
+
+```cpp
+std::shared_ptr<Widget> pw(new Widget);
+processWidget(pw, priority());
+```
+
+总结:
+
+> 以独立语句将 newed 对象置入智能指针, 以确保资源被释放, 避免异常抛出导致资源泄漏
