@@ -927,3 +927,47 @@ shared_ptr 相对于裸指针的额外花销是: 2 倍大的内存占用, 使用
 总结:
 
 > 设计 class 就像设计 type 一样, 在定义新的 type 前, 请考虑本条款覆盖的所有讨论主题
+
+### 20 宁以 pass-by-reference-to-const 替换 pass-by-value
+
+```cpp
+bool validateStudent(Student s);
+
+bool validateStudent(const Student& s);
+```
+
+用 pass-by-reference-to-const 替换 pass-by-value 可以避免多次的 copy 构造函数和析构函数调用, 为避免 s 被改变, const 是有必要的
+
+用 by reference 传递参数还可以避免对象切割问题, 避免 derived class 对象被切割为 base class 对象
+
+```cpp
+class Window {
+public:
+    std::string name() const;
+    virtual void display() const;
+};
+
+class WindowWithScrollBars : public Window {
+public:
+    virtual void display() const;
+};
+
+void printNameAndDisplay(Window w)  // 错误, 会导致 WindowWithScrollBars 对象传入后使用 base class 的 display
+{
+    std::cout << w.name();
+    w.display();
+}
+
+void printNameAndDisplay(const Window& w)  // 正确
+{
+    std::cout << w.name();
+    w.display();
+}
+```
+
+由于 reference 往往由指针实现, 对于内置类型 pass-by-value 的效率往往更高, STL中的迭代器和函数对象也是这样, 但即便是小型的自定义 types, pass-by-reference 也往往是更好的选择
+
+总结:
+
+> 尽量以 pass-by-reference-to-const 替换 pass-by-value, 前者通常比较高效, 并可避免切割问题
+> 以上规则并不适用于内置类型, STL 迭代器和函数对象, 对它们而言 pass-by-value 通常比较适当
