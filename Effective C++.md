@@ -971,3 +971,66 @@ void printNameAndDisplay(const Window& w)  // 正确
 
 > 尽量以 pass-by-reference-to-const 替换 pass-by-value, 前者通常比较高效, 并可避免切割问题
 > 以上规则并不适用于内置类型, STL 迭代器和函数对象, 对它们而言 pass-by-value 通常比较适当
+
+### 21 必须返回对象时, 别妄想返回 reference
+
+任何函数如果返回一个 reference 或指针指向某个 local 对象都会导致未定义行为
+
+如果在函数内进行堆内存分配, 并返回一个 reference 或指针指向这个对象, 则需要在函数外释放, 这极易导致内存泄漏
+
+在函数内部创建一个 static 对象, 并返回一个 reference 或指针指向这个对象, 会导致线程安全问题, 并且导致函数不可重入
+
+```cpp
+class Rational {
+public:
+    Rational(int numerator = 0, int denominator = 1)
+        : n(numerator), d(denominator)
+    {}
+    ...
+
+private:
+    int n, d;
+
+    friend const Rational operator*(const Rational& lhs, const Rational& rhs);
+};
+
+// 1. 返回一个 reference
+const Rational& operator*(const Rational& lhs, const Rational& rhs) // wrong
+{
+    static Rational result;
+    result = Rational(lhs.n * rhs.n, lhs.d * rhs.d);
+    return result;
+}
+
+// 2. 返回一个堆内存分配的对象
+const Rational& operator*(const Rational& lhs, const Rational& rhs) // wrong
+{
+    Rational* result = new Rational(lhs.n * rhs.n, lhs.d * rhs.d);
+    return *result;
+}
+
+// 3. 返回一个 static 对象
+const Rational& operator*(const Rational& lhs, const Rational& rhs) // wrong
+{
+    static Rational result;
+    result = Rational(lhs.n * rhs.n, lhs.d * rhs.d);
+    return result;
+}
+
+// 会导致下面的表达式总为 true
+if ((r1 * r2) == (r3 * r4)) { ... }
+// 等价于 if (operator==(operator*(r1, r2), operator*(r3, r4))) { ... }
+```
+
+一个必须返回新对象的函数的正确写法是: 简单地返回一个对象, 放弃为了效率而返回 reference
+
+```cpp
+const Rational operator*(const Rational& lhs, const Rational& rhs)
+{
+    return Rational(lhs.n * rhs.n, lhs.d * rhs.d);
+}
+```
+
+总结:
+
+> 绝不要返回 pointer 或 reference 指向一个 local stack 对象, 或返回 reference 指向一个 heap-allocated 对象, 或返回 reference 指向一个 local static 对象而有可能同时需要多个这样的对象
