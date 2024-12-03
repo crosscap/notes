@@ -270,6 +270,25 @@ non-local static 对象指的是 global 对象和 namespace 作用域内的对�
 
 为解决不同编译单元中定义之 non-local static 对象的初始化次序问题, 可以将每个 non-local static 对象搬到一个独立函数中, 该函数返回一个 reference 指向该对象, 然后用户调用该函数, 这是 Singleton 模式的一种实现
 
+```cpp
+class FileSystem
+{
+public:
+    std::size_t numDisks() const;
+};
+
+FileSystem& tfs()
+{
+    static FileSystem fs;
+    return fs;
+}
+
+void test()
+{
+    std::size_t disks = tfs().numDisks(); // tfs 改为 tfs()
+}
+```
+
 总结:
 > 为内置类型对象进行手工初始化
 > 构造函数最好使用成员初始化列表, 而非赋值操作, 成员初始化次序和声明次序相同
