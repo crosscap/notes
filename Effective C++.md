@@ -1053,3 +1053,16 @@ const Rational operator*(const Rational& lhs, const Rational& rhs)
 总结:
 
 > 绝不要返回 pointer 或 reference 指向一个 local stack 对象, 或返回 reference 指向一个 heap-allocated 对象, 或返回 reference 指向一个 local static 对象而有可能同时需要多个这样的对象
+
+### 22 将成员变量声明为 private
+
+将成员变量声明为 private 而非 public 或者 protected 的原因:
+
+- 语法一致性: 只有通过函数才能访问成员变量可以使代码更加一致
+- 可细微划分访问控制: 更精确地控制成员变量, 保证约束条件成立
+- 封装: 通过函数可以改变实现方法, 而不改变接口
+
+总结:
+
+> 将成员变量声明为 private, 以确保语法一致性, 可细微划分访问控制, 允诺约束条件获得保证, 并提供 class 作者以充分的实现弹性
+> protected 并不比 public 更具封装性
