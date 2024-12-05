@@ -1066,3 +1066,39 @@ const Rational operator*(const Rational& lhs, const Rational& rhs)
 
 > 将成员变量声明为 private, 以确保语法一致性, 可细微划分访问控制, 允诺约束条件获得保证, 并提供 class 作者以充分的实现弹性
 > protected 并不比 public 更具封装性
+
+### 23 宁以 non-member, non-friend 替换 member 函数
+
+尽管面向对象编程的基本理念是数据和操作被封装在 class 内, 但并不是所有操作都要被封装在 class 内, 某些情况下, member 函数会导致封装性降低
+
+对于对象内的数据, 越少的代码可以看到数据, 封装性就越好, 所以 non-member, non-friend 不增加可以访问对象内 private 数据的函数的数量, 从而有助于提升封装性
+
+可以将此 non-member, non-friend 函数放在另一个工具类中, 更自然的做法是放在和 class 相同的 namespace 中, 这样子可以将不同的函数放在不同的头文件中, 以减少编译依赖
+
+```cpp
+// webbrowser.h
+namespace WebBrowserStuff {
+    class WebBrowser {
+    public:
+        void clearCache();
+        void clearHistory();
+        void removeCookies();
+    };
+}
+
+// webbrowserbookmarks.h
+namespace WebBrowserStuff {
+    void clearBookmarks();
+    ...
+}
+
+// webbrowsercookies.h
+namespace WebBrowserStuff {
+    void clearCookies(WebBrowser& wb);
+    ...
+}
+```
+
+总结:
+
+> 宁可拿 non-member, non-friend 函数替换 member 函数, 以提升封装性, 包裹弹性, 机能扩充性
