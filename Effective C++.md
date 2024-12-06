@@ -1102,3 +1102,43 @@ namespace WebBrowserStuff {
 总结:
 
 > 宁可拿 non-member, non-friend 函数替换 member 函数, 以提升封装性, 包裹弹性, 机能扩充性
+
+### 24 若所有参数皆需类型转换, 请为此采用 non-member 函数
+
+由于只有参数被列于参数列中可以进行隐式类型转换, 而 "被调用之成员函数所隶属的对象" (即 this 对象) 无法进行隐式类型转换, 所以如果所有参数都需要类型转换且使用成员函数, 则导致调用时对参数的顺序有所限制
+
+```cpp
+class Rational {
+public:
+    Rational(int numerator = 0, int denominator = 1);
+    const Rational operator*(const Rational& rhs) const;
+    ...
+};
+
+Rational oneEighth(1, 8);
+Rational oneHalf(1, 2);
+Rational result;
+
+result = oneHalf * oneEighth;  // right
+result = oneEighth * oneHalf;  // right
+result = oneEighth * 2;        // right
+result = 2 * oneEighth;        // wrong
+```
+
+如果将 operator* 改为 non-member 函数, 则可以避免这个问题, 但是要记住, 如果可以避免成为 friend 函数, 就不要成为 friend 函数
+
+```cpp
+class Rational {
+public:
+    Rational(int numerator = 0, int denominator = 1);
+    ...
+};
+
+const Rational operator*(const Rational& lhs, const Rational& rhs);
+```
+
+但是如果离开 Object-Oriented C++ 而进入 Template C++ 的领域, 即让 Rational 成为一个 template class, 本例不一定适用, 详见条款 46
+
+总结:
+
+> 如果某个函数的所有参数 (包括被 this 指针所指的那个隐喻参数) 都需要类型转换, 那么它必须是个 non-member 函数
