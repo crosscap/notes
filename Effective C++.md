@@ -1280,3 +1280,55 @@ void doSomething(T& lhs, T& rhs)
 > 如果你提供一个 member swap 函数, 也提供一个 non-member swap 函数, 以调用 member swap 函数, 对于 class (非 template) 还要特化 std::swap
 > 调用 swap 时应针对 std::swap 使用 using 声明式, 然后调用 swap 并且不带任何 namespace 修饰符
 > 为 "用户定义类型" 进行 std templates 全特化是好的, 但是不要尝试在 std 内加入全新的东西
+
+## 5 实现
+
+### 26 尽可能延后变量定义式的出现时间
+
+过早出现的变量定义式可能导致构造和析构函数被调用, 从而导致效率降低, 此外, 使用默认构造函数初始化变量可能会导致不必要的初始化开销
+
+尽可能延后不仅仅指的是延后定义, 直到非得使用该变量时, 还指尝试延后到能够给出初始值为止
+
+```cpp
+std::string encryptPassword(const std::string& password)
+{
+    using namespace std;
+    // string encrypted; // too early
+    if (password.length() < minimumPasswordLength) {
+        throw std::logic_error("Password is too short");
+    }
+    // string encrypted;   // use default constructor
+    string encrypted(password); // ok
+    ...
+    return encrypted;
+}
+```
+
+对于循环有两种定义方法, 各自的成本如下:
+
+```cpp
+
+// A. 在循环外定义
+// 成本: 1 个构造函数调用, 1 个析构函数调用, n 个赋值操作
+Widget w;
+for (int i = 0; i < n; ++i) {
+    w = 和 i 相关的值;
+}
+
+// B. 在循环内定义
+// 成本: n 个构造函数调用, n 个析构函数调用
+for (int i = 0; i < n; ++i) {
+    Widget w(和 i 相关的值);
+}
+```
+
+如果一个赋值操作的成本低于一个构造函数加上一个析构函数的成本, A 的成本更低, 否则 B 的成本更低, 同时 A 造成名称的作用域比 B 更大, 有时会影响代码的可理解性和易维护性, 所以除非:
+
+1. 知道赋值成本比构造加析构成本低
+2. 正在处理代码中效率高敏感 (performance-sensitive) 的部分
+
+否则都应该选择 B
+
+总结:
+
+> 尽可能延后变量定义式的出现时间, 这样做可增加程序清晰度并改善程序效率
