@@ -1476,3 +1476,16 @@ for (VPW::iterator it = winPtrs.begin(); it != winPtrs.end(); ++it) {
 > 尽量避免转型, 特别是在注重效率的代码中避免 dynamic_cast, 如果转型是必要的试着进行替代设计
 > 如果转型是必要的, 试着将它隐藏在某个函数背后
 > 使用 C++-style cast 而不是 old-style cast
+
+### 28 避免返回 handles 指向对象内部成分
+
+- 成员变量的封装性最多只等于 "返回其 reference" 的函数的访问级别, 函数不当地返回 reference 会导致封装性下降
+- 如果 const 函数传出一个 reference, 如果这个数据与对象自身有关联又被存储于对象之外, 那么函数的调用者可以修改这笔数据, 这是 bitwise constness 的一个附带效果
+
+以上的情况对于指针或者迭代器同样适用, 这些被统称为 handles (号码牌, 用于取得某个对象)
+
+将返回的 handles 加上 const 可解决上述的问题, 但是仍然可能产生 dangling handles (空悬的号码牌) 问题, 最常见的情况是函数返回值
+
+总结:
+
+> 避免返回 handles (包括 reference, 指针, 迭代器) 指向函数内部, 遵守该条款可增加封装性, 帮助 const 成员函数的行为一致, 并将发生 dangling handles 的可能性降至最低
