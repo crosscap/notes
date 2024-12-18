@@ -1551,3 +1551,107 @@ inline 函数通常一定置于头文件中, 因为大多数建制环境在编�
 
 > 将大多数 inline 函数限制在小型, 被频繁调用的函数上, 这可使日后的调试和二进制升级更容易, 也可使潜在的代码膨胀问题最小化, 程序速度提升机会最大化
 > 不要因为 finction templates 出现在头文件就将它们声明为 inline
+
+### 31 将文件间的编译依存关系降至最低
+
+编译依存关系是指一个文件的修改导致其他文件的重新编译, 为了降低编译依存关系, 可以使用前置声明 (forward declaration), 但在 C++ 中仍存在一些问题, 所以需要将对象实现隐藏于指针之后, 这被称为 pimpl idiom (pointer to implementation), 这种 class 内指针往往称为 pImpl:
+
+```cpp
+#include <string>
+#include <memory>
+
+class PersonImpl;  // forward declaration
+class Date;
+class Address;
+
+class Person {
+public:
+    Person(const std::string& name, const Date& birthday, const Address& addr);
+    std::string name() const;
+    std::string birthDate() const;
+    std::string address() const;
+    ...
+private:
+    std::shared_ptr<PersonImpl> pImpl;
+};
+```
+
+这个分离的关键在于以声明的依存性替换定义的依存性
+
+- 如果可以使用指针或引用, 就不要使用对象
+- 如果能够, 尽量以 class 声明式替换 class 定义式: 即使声明的函数返回某 class 或者以传值的方式接收某 class, 也可以只包含 class 的声明式
+- 为声明式和定义式提供不同的头文件
+
+```cpp
+// class Date;
+#include "datefwd.h"
+Date today();
+void clearAppointments(Date d);
+```
+
+使用 pimpl idiom 的 class 被称为 Handle classes, 它们可以将所有函数转交给相应的实现类完成实际的工作
+
+```cpp
+#include "Person.h"
+#include "PersonImpl.h"
+
+Person::Person(const std::string& name, const Date& birthday, const Address& addr)
+    : pImpl(new PersonImpl(name, birthday, addr))
+{}
+
+Person::~Person()
+{
+    delete pImpl;
+}
+
+std::string Person::name() const
+{
+    return pImpl->name();
+}
+```
+
+另一种制作 Handle classes 的方法是令 Handle classes 成为一种特殊的 abstract base classes (抽象基类), 被称为 Interface classes
+
+Interface class 的使用者为了使用这个 class 可以使用 factory (工厂) 函数 (又称 virtual 构造函数) 来创建该类的 derived classes, 它们返回指针 (或者智能指针) 指向被动态分配取得的对象, 这样的函数往往被声明为 static 的.
+
+```cpp
+class Person {
+public:
+    virtual ~Person();
+    virtual std::string name() const = 0;
+    virtual std::string birthDate() const = 0;
+    virtual std::string address() const = 0;
+    ...
+    static std::shared_ptr<Person> create(const std::string& name, const Date& birthday, const Address& addr);
+};
+
+class RealPerson : public Person {
+    ...
+};
+
+std::shared_ptr<Person> Person::create(const std::string& name, const Date& birthday, const Address& addr)
+{
+    return std::shared_ptr<Person>(new RealPerson(name, birthday, addr));
+}
+
+// usage
+std::shared_ptr<Person> pp(Person::create(name, birthday, addr));
+```
+
+更现实的 create 会创建不同类型的 derived classes
+
+Interface class 的最常见的机制有: 1. 从 Interface class 继承接口规格然后实现出接口所覆盖的函数; 2. 多重继承
+
+Handle classes 和 Interface classes 解除了接口和实现之间的依赖关系, 但是这种解耦会导致一些开销:
+
+- Handle classes 会导致额外的间接寻址
+- Handle classes 的 implementation pointer 的内存开销和初始化开销
+- Interface classes 中函数调用时因 virtual 函数而导致的开销和 vptr 的内存开销
+- 二者依赖 inline 函数
+
+要在代码效率和文件间依赖关系之间取得平衡
+
+总结:
+
+> 支持编译依存性最小化的一般构想是: 相依于声明式而非定义式, 基于此构想的具体手段包括 Handle classes 和 Interface classes
+> 程序库头文件应该以完全且仅有声明式 (full and declaration-only forms) 的形式存在, 不管是否涉及 templates
