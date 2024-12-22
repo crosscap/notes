@@ -1673,3 +1673,102 @@ is-a 并非存在于 class 之间唯一的关系, 还有 has-a (持有) 关系�
 总结:
 
 > public 继承意味着 is-a 关系, 适用于 Base class 的所有事物都能施于 Derived class, 因为每一个 Derived class 对象也是一个 Base class 对象
+
+### 33 避免遮掩继承而来的名称
+
+本题材事实上和作用域有关, 如下面的代码:
+
+```cpp
+int x;
+void someFunc()
+{
+    double x;
+    ...
+}
+```
+
+在 someFunc 中, x 会遮掩全局的 x, 作用域如下图所示:
+
+![scope](./image/Effective%20C++.assets/scope.png)
+
+引入继承后的代码如下:
+
+```cpp
+class Base {
+    int x;
+public:
+    virtual void mf1() = 0;
+    virtual void mf2();
+    void mf3();
+};
+
+class Derived : public Base {
+public:
+    virtual void mf1();
+    void mf4();
+};
+```
+
+作用域如下图所示:
+
+![class_scope](./image/Effective%20C++.assets/class_scope.png)
+
+C++ 查找名称的顺序是:
+
+1. 查找 local 作用域
+2. 查找外围作用域, 也就是 Derived class 的作用域
+3. 继续向外围移动, 也就是沿着继承体系向上移动, 直到找到 Base class 的作用域
+4. 查找对应的命名空间
+5. 查找全局作用域
+
+加入重载后的代码如下:
+
+```cpp
+class Base {
+    int x;
+public:
+    virtual void mf1() = 0;
+    virtual void mf1(int);
+    virtual void mf2();
+    void mf3();
+    void mf3(double);
+};
+
+class Derived : public Base {
+public:
+    virtual void mf1();
+    void mf3();
+    void mf4();
+};
+```
+
+作用域如下图所示:
+
+![class_scope2](./image/Effective%20C++.assets/class_scope2.png)
+
+在这里所有 mf1 和 mf3 都会遮掩 Base class 的同名函数, 也就是 Base Class 内同名函数不会被继承, 为了继承 Base class 内的同名函数, 可以使用 using 声明式, 这意味着如果继承 base class 并加上重载函数, 而你又希望重新定义或覆写一部分, 那么必须为每一个被遮掩的函数加上 using 声明式, 由于 base class 内是 public 的, 所以 derived class 内需要在 public 区域内加上 using 声明式:
+
+```cpp
+class Derived : public Base {
+public:
+    using Base::mf1;
+    using Base::mf3;
+    virtual void mf1();
+    void mf3();
+    void mf4();
+};
+```
+
+尽管从定义上讲不允许不继承 public 函数, 但是不继承 private 函数是可以的, 这时如果希望继承某一 private 函数而不继承其重载函数可以使用转交函数
+
+```cpp
+class Derived : private Base {
+public:
+    virtual void mf1(int) { Base::mf1(); }
+};
+```
+
+总结:
+
+> derived class 内的名称会遮掩 base class 内的名称, 这和 public 继承的期望不符
+> 为了让 base class 内的名称在 derived class 内可见, 可以使用 using 声明式或转交函数
