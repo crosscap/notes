@@ -1772,3 +1772,71 @@ public:
 
 > derived class 内的名称会遮掩 base class 内的名称, 这和 public 继承的期望不符
 > 为了让 base class 内的名称在 derived class 内可见, 可以使用 using 声明式或转交函数
+
+### 34 区分接口继承和实现继承
+
+一个 base class 将影响它的继承类:
+
+- 成员函数的接口总是会继承
+- 声明一个 pure virtual 函数的目的是为了让 derived class 只继承函数接口
+- 声明一个简朴的 (非纯) impure virtual 函数的目的是为了让 derived class 继承该函数接口和缺省实现
+- 声明一个 non-virtual 函数的目的是为了让 derived class 继承该函数的接口和强制性实现
+
+为了避免 derived class 缺省继承 impure virtual 函数可以将 virtual 函数改为 pure virtual 函数同时在 Base class 中提供缺省实现, 为了继承该实现 derived class 可以使用一个 inline 函数调用实现
+
+```cpp
+class Airport { ... };
+
+class Airplane {
+public:
+    virtual void fly(const Airport& destination) = 0;
+    ...
+protected:
+    void defaultFly(const Airport& destination);
+};
+
+void Airplane::defaultFly(const Airport& destination)
+{
+    ...
+}
+
+class ModelA : public Airplane {
+public:
+    // 继承接口和缺省实现
+    virtual void fly(const Airport& destination) { Airplane::defaultFly(destination); }
+};
+
+class ModelC : public Airplane {
+public:
+    // 继承接口
+    virtual void fly(const Airport& destination);
+};
+```
+
+也可以借助 "pure virtual 函数可以拥有自己的实现" 解决上述问题的同时避免污染命名空间, 不过会导致无法让两个函数使用不同的保护级别
+
+```cpp
+class Airplane {
+public:
+    virtual void fly(const Airport& destination) = 0;
+    ...
+};
+
+void Airplane::fly(const Airport& destination)
+{
+    ...
+}
+
+class ModelA : public Airplane {
+public:
+    // 继承接口和缺省实现
+    virtual void fly(const Airport& destination) { Airplane::fly(destination); }
+};
+```
+
+总结:
+
+> 区分接口继承和实现继承, 在 public 继承下, derived class 总是继承 base class 的接口
+> pure virtual 函数只具体指定接口继承
+> 简朴的 (非纯) impure virtual 函数具体指定接口继承和缺省实现继承
+> non-virtual 函数具体指定接口继承和强制性实现继承
