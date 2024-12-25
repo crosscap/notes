@@ -1790,6 +1790,8 @@ class Airport { ... };
 class Airplane {
 public:
     virtual void fly(const Airport& destination) = 0;
+    virtual void error(const string& message);
+    int objectID() const;
     ...
 protected:
     void defaultFly(const Airport& destination);
@@ -1840,3 +1842,144 @@ public:
 > pure virtual 函数只具体指定接口继承
 > 简朴的 (非纯) impure virtual 函数具体指定接口继承和缺省实现继承
 > non-virtual 函数具体指定接口继承和强制性实现继承
+
+### 35 考虑 virtual 函数以外的其他选择
+
+### 使用 virtual 函数
+
+```cpp
+class GameCharacter {
+public:
+    virtual int healthValue() const;
+    ...
+};
+```
+
+#### 籍由 Non-Virtual Interface (NVI) 手法实现 *Template Method* 模式
+
+这一思想流派认为 virtual 函数应该几乎总是 private, 所以应该将 healthValue 保留为 public non-virtual 函数, 并调用一个 private virtual 函数
+
+```cpp
+class GameCharacter {
+public:
+    int healthValue() const
+    {
+        ...
+        int result = doHealthValue();
+        ...
+        return result;
+    }
+    ...
+private:
+    virtual int doHealthValue() const;
+};
+```
+
+NVI 手法的一个优点是可以在 public 函数中加入一些额外的操作, 这样 class 的设计者保证了 virtual 函数 "何时被调用", 而继承类则实现 "如何完成函数"
+
+#### 藉由 Function Pointers 实现 *Strategy* 模式
+
+这一设计主张计算函数和类型无关, 所以可以要求每个类型的构造函数接受一个函数指针, 这样就可以在构造函数中指定函数
+
+```cpp
+class GameCharacter;
+
+int defaultHealthCalc(const GameCharacter& gc);
+
+class GameCharacter {
+public:
+    typedef int (*HealthCalcFunc)(const GameCharacter&);
+    explicit GameCharacter(HealthCalcFunc hcf = defaultHealthCalc) : healthCalcFunc(hcf) {}
+    int healthValue() const { return healthCalcFunc(*this); }
+    ...
+private:
+    HealthCalcFunc healthCalcFunc;
+};
+```
+
+这种 ***Strategy*** 模式可以带来如下优点:
+
+- 同一类型下的不同实体可以有不同的实现函数
+- 实现函数可以在运行期内变更
+
+但是注意, 这种情况下的实现函数无法访问 non-public 成员, 唯一能解决问题的办法是弱化 class 的封装如声明为 friend 或者提供所需 non-public 成分的访问函数
+
+#### 藉由 std::function 实现 *Strategy* 模式
+
+注: C++11 中引入了 `std::function`, 用于替代 `tr1::function`
+
+使用 `std::function` 代替函数指针, 使得构造函数可以接受任何可调用对象, 例如函数指针, 函数对象, lambda 表达式, 经过 `std::bind` 处理的成员函数等, 只要与 `std::function` 的签名式 (target signature) 兼容即可
+
+```cpp
+#include <functional>
+
+class GameCharacter {
+public:
+    typedef std::function<int (const GameCharacter&)> HealthCalcFunc;
+    explicit GameCharacter(HealthCalcFunc hcf = defaultHealthCalc) : healthCalcFunc(hcf) {}
+    int healthValue() const { return healthCalcFunc(*this); }
+    ...
+private:
+    HealthCalcFunc healthCalcFunc;
+};
+```
+
+函数指针, 函数对象, 成员函数各自的使用方法如下:
+
+```cpp
+short calcHealth(const GameCharacter& gc); // returns short
+
+struct HealthCalculator {
+    int operator()(const GameCharacter& gc) const;
+};
+
+class GameLevel {
+public:
+    float health(const GameCharacter& gc) const;
+};
+
+GameCharacter g1(calcHealth);
+GameCharacter g2(HealthCalculator());
+GameLevel level;
+GameCharacter g3(std::bind(&GameLevel::health, level, std::placeholders::_1));
+```
+
+#### 古典的 *Strategy* 模式
+
+在设计模式中传统的 *Strategy* 模式是将实现函数做成一个分离的继承体系中的 virtual 成员函数, 结果如下:
+
+![strategy](./image/Effective%20C++.assets/strategy.png)
+
+```cpp
+class GameCharacter;
+
+class HealthCalcFunc {
+public:
+    virtual int calc(const GameCharacter& gc) const;
+    virtual ~HealthCalcFunc();
+};
+
+HealthCalcFunc defaultHealthCalc;
+
+class GameCharacter {
+public:
+    explicit GameCharacter(HealthCalcFunc* phcf = &defaultHealthCalc) : pHealthCalc(phcf) {}
+    int healthValue() const { return pHealthCalc->calc(*this); }
+    ...
+private:
+    HealthCalcFunc* pHealthCalc;
+};
+```
+
+#### 摘要
+
+- 使用 non-virtual interface (NVI) 手法是实现 *Template Method* 模式的一种特殊情况, 它以 non-virtual public 函数调用包裹较低访问性 (private 或 protected) 的 virtual 函数
+- 将 virtual 函数替换为函数指针成员变量是 *Strategy* 模式的一种分解表现形式
+- 以 std::function 成员变量替换 virtual 函数从而允许任何可调用事物 (callable entities) 搭配兼容于需求的签名式也是 *Strategy* 模式的一种分解表现形式
+- 将 virtual 函数替换为另一个继承体系中的 virtual 函数是 *Strategy* 模式的一种传统表现形式
+
+#### 总结
+
+- virtual 函数的替代方案包括 NVI 手法及 *Strategy* 设计模式的多种形式, NVI 手法自身是一个特殊形式的 *Template Method* 模式
+- 将功能从成员函数移到 class 外部函数带来的一个缺点是非成员函数无法访问 class 的 non-public 成员
+- std::function 对象的行为就像一般函数指针, 这样的对象可以容纳与给定的目标签名式兼容的任何可调用物
