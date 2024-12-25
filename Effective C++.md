@@ -28,9 +28,9 @@
 - Template C++: 传引用 (pass-by-reference-to-const)
 - STL: 传值 (pass-by-value)
 
-要记住的是:
+总结:
 
-> C++ 高效编程守则视情况而变化, 这取决于你使用 C++ 的哪一部分
+- C++ 高效编程守则视情况而变化, 这取决于你使用 C++ 的哪一部分
 
 ### 02 尽量以 const, enum, inline 替换 #define
 
@@ -106,10 +106,10 @@ inline void callWithMax(const T& a, const T& b) {
 }
 ```
 
-要记住的是:
+总结:
 
-> 对于常量, 最好使用 const 对象或者 enum 而非 #define
-> 对于形似函数的宏, 最好使用 inline 函数而非 #define
+- 对于常量, 最好使用 const 对象或者 enum 而非 #define
+- 对于形似函数的宏, 最好使用 inline 函数而非 #define
 
 ### 03 尽量使用 const
 
@@ -210,11 +210,11 @@ public:
 };
 ```
 
-总结:
+#### 总结
 
-> 将某些东西声明为 const 可帮助编译器侦测出错误用法, const 可被施加于任何作用域内的对象, 函数参数, 函数返回值, 成员函数本体
-> 编译器强制实施 bitwise const, 但编写程序时应该遵循 conceptual constness
-> 当 const 和 non-const 成员函数有着实质等价的实现时, 令 non-const 版本调用 const 版本可避免代码重复
+- 将某些东西声明为 const 可帮助编译器侦测出错误用法, const 可被施加于任何作用域内的对象, 函数参数, 函数返回值, 成员函数本体
+- 编译器强制实施 bitwise const, 但编写程序时应该遵循 conceptual constness
+- 当 const 和 non-const 成员函数有着实质等价的实现时, 令 non-const 版本调用 const 版本可避免代码重复
 
 ### 04 确保对象使用前已被初始化
 
@@ -290,9 +290,10 @@ void test()
 ```
 
 总结:
-> 为内置类型对象进行手工初始化
-> 构造函数最好使用成员初始化列表, 而非赋值操作, 成员初始化次序和声明次序相同
-> 为避免 non-local static 对象之初始化次序问题, 使用 local static 对象替代 non-local static 对象
+
+- 为内置类型对象进行手工初始化
+- 构造函数最好使用成员初始化列表, 而非赋值操作, 成员初始化次序和声明次序相同
+- 为避免 non-local static 对象之初始化次序问题, 使用 local static 对象替代 non-local static 对象
 
 ## 2 构造, 析构, 赋值运算
 
@@ -320,7 +321,7 @@ public:
 
 总结:
 
-> 编译器可以为 class 创建 default 构造函数, copy 构造函数, copy 赋值运算符, 析构函数
+- 编译器可以为 class 创建 default 构造函数, copy 构造函数, copy 赋值运算符, 析构函数
 
 ### 06 若不想使用编译器自动生成的函数, 就该明确拒绝
 
@@ -343,7 +344,7 @@ boost::noncopyable 是一个类似的类
 
 总结:
 
-> 为驳回编译器自动提供的函数, 可以将相应的成员函数声明为 private 并且不予实现, Uncopyable 这样的 base class 也可以达到这个目的
+- 为驳回编译器自动提供的函数, 可以将相应的成员函数声明为 private 并且不予实现, Uncopyable 这样的 base class 也可以达到这个目的
 
 补充: 至少在 C++11 之后, 可以使用 delete 关键字来达到相同的目的
 
@@ -381,8 +382,8 @@ AWOV::~AWOV() {}    // 必须提供定义
 
 总结:
 
-> polymorphic base classes 应该声明一个 virtual 析构函数, 如果 class 带有任何 virtual 函数, 它就应该拥有一个 virtual 析构函数
-> class 的设计目的如果不是作为 base class 使用, 或者不是为了具备多态性 (polymorphically), 就不应该声明 virtual 析构函数
+- polymorphic base classes 应该声明一个 virtual 析构函数, 如果 class 带有任何 virtual 函数, 它就应该拥有一个 virtual 析构函数
+- class 的设计目的如果不是作为 base class 使用, 或者不是为了具备多态性 (polymorphically), 就不应该声明 virtual 析构函数
 
 ### 08 别让异常逃离析构函数
 
@@ -451,8 +452,8 @@ private:
 ```
 
 总结:
-> 析构函数绝对不要抛出异常, 如果一个被析构函数调用的函数可能抛出异常, 析构函数应该捕获任何异常, 然后吞下它们, 或者结束程序
-> 如果客户需要对某个操作函数出现的异常做出反应, 那么 class 应该提供一个普通函数 (如 close) 来执行该操作, 而不应该依赖析构函数来执行该操作
+- 析构函数绝对不要抛出异常, 如果一个被析构函数调用的函数可能抛出异常, 析构函数应该捕获任何异常, 然后吞下它们, 或者结束程序
+- 如果客户需要对某个操作函数出现的异常做出反应, 那么 class 应该提供一个普通函数 (如 close) 来执行该操作, 而不应该依赖析构函数来执行该操作
 
 ### 09 绝不在构造和析构过程中调用 virtual 函数
 
@@ -499,7 +500,7 @@ BuyTransaction::BuyTransaction(parameters)
 
 总结:
 
-> 在构造和析构期间不要调用 virtual 函数, 因为这类调用不会下降至 derived class
+- 在构造和析构期间不要调用 virtual 函数, 因为这类调用不会下降至 derived class
 
 ### 10 令 operator= 返回一个 reference to `*this`
 
@@ -531,7 +532,8 @@ public:
 ```
 
 总结:
-> 令赋值运算符返回一个 reference to `*this`
+
+- 令赋值运算符返回一个 reference to `*this`
 
 ### 11 在 operator= 中处理"自我赋值"
 
@@ -614,8 +616,9 @@ public:
 这样做有些牺牲清晰性, 但可能使编译器产生更高效的代码
 
 总结:
-> 确保当对象自我赋值时 operator= 有正确的行为, 其中的技术包括 "证同测试", 经过设计的语句顺序 和 copy-and-swap
-> 确定任何函数如果操作一个以上的对象, 而其中多个对象是同一个对象时, 该函数的行为仍然正确
+
+- 确保当对象自我赋值时 operator= 有正确的行为, 其中的技术包括 "证同测试", 经过设计的语句顺序 和 copy-and-swap
+- 确定任何函数如果操作一个以上的对象, 而其中多个对象是同一个对象时, 该函数的行为仍然正确
 
 ### 12 复制对象时勿忘其每一个成分
 
@@ -669,8 +672,8 @@ private:
 
 总结:
 
-> copying 函数应该确保复制对象内的所有成员变量和所有 base class 成分
-> 不要尝试以某个 copying 函数调用另一个 copying 函数, 应该将共同机制放在第三个函数中, 由两个 copying 函数共同调用
+- copying 函数应该确保复制对象内的所有成员变量和所有 base class 成分
+- 不要尝试以某个 copying 函数调用另一个 copying 函数, 应该将共同机制放在第三个函数中, 由两个 copying 函数共同调用
 
 ## 3 资源管理
 
@@ -715,8 +718,8 @@ void f()
 
 总结:
 
-> 为防止资源泄漏, 使用 RAII 对象管理资源
-> 两个常被使用的 RAII class 是 unique_ptr 和 shared_ptr, shared_ptr 一般是较佳选择, 它的复制行为较为直观
+- 为防止资源泄漏, 使用 RAII 对象管理资源
+- 两个常被使用的 RAII class 是 unique_ptr 和 shared_ptr, shared_ptr 一般是较佳选择, 它的复制行为较为直观
 
 ### 14 在资源管理类中小心 copying 行为
 
@@ -764,8 +767,8 @@ Copying 函数有可能被编译器自动生成, 如果默认行为不合要求�
 
 总结:
 
-> 复制 RAII 对象必须一并复制它所管理的资源, 所以资源的 copying 行为决定 RAII 对象的 copying 行为
-> 普遍而常见的 RAII class *copying* 行为是 抑制 copying, 施行引用计数, 不过其他的行为也可能被实现
+- 复制 RAII 对象必须一并复制它所管理的资源, 所以资源的 copying 行为决定 RAII 对象的 copying 行为
+- 普遍而常见的 RAII class *copying* 行为是 抑制 copying, 施行引用计数, 不过其他的行为也可能被实现
 
 ### 15 在资源管理类中提供对原始资源的访问
 
@@ -835,8 +838,8 @@ FontHandle f2 = f1;  // 隐式转换
 
 总结:
 
-> APIs 往往要求访问原始资源, 所以 RAII class 需要提供一个 "取得其所管理之原始资源" 的办法
-> 对原始资源的访问可能经由显式转换或隐式转换, 前者比较安全, 但后者比较方便
+- APIs 往往要求访问原始资源, 所以 RAII class 需要提供一个 "取得其所管理之原始资源" 的办法
+- 对原始资源的访问可能经由显式转换或隐式转换, 前者比较安全, 但后者比较方便
 
 ### 16 成对使用 new 和 delete 时要采取相同形式
 
@@ -862,7 +865,7 @@ delete[] pal;  // 正确
 
 总结:
 
-> new 时使用 [] 分配内存, delete 时也要使用 []; new 时不使用 [], delete 时也不使用 []
+- new 时使用 [] 分配内存, delete 时也要使用 []; new 时不使用 [], delete 时也不使用 []
 
 ### 17 以独立语句将 newed 对象置入智能指针
 
@@ -902,7 +905,7 @@ processWidget(pw, priority());
 
 总结:
 
-> 以独立语句将 newed 对象置入智能指针, 以确保资源被释放, 避免异常抛出导致资源泄漏
+- 以独立语句将 newed 对象置入智能指针, 以确保资源被释放, 避免异常抛出导致资源泄漏
 
 ## 4 设计与声明
 
@@ -919,10 +922,10 @@ shared_ptr 相对于裸指针的额外花销是: 2 倍大的内存占用, 使用
 
 总结:
 
-> 设计接口易于正确使用, 不易误用, 这是接口设计者的目标
-> 促进正确使用包括接口的一致性, 以及与内置类型兼容
-> 防止误用包括避免建立新类型, 限制类型上的操作, 束缚对象值, 消除客户的资源管理责任
-> shared_ptr 支持定制删除器, 可防范 DLL 问题, 可用来自动解除互斥锁等等
+- 设计接口易于正确使用, 不易误用, 这是接口设计者的目标
+- 促进正确使用包括接口的一致性, 以及与内置类型兼容
+- 防止误用包括避免建立新类型, 限制类型上的操作, 束缚对象值, 消除客户的资源管理责任
+- shared_ptr 支持定制删除器, 可防范 DLL 问题, 可用来自动解除互斥锁等等
 
 ### 19 设计 class 犹如设计 type
 
@@ -945,7 +948,7 @@ shared_ptr 相对于裸指针的额外花销是: 2 倍大的内存占用, 使用
 
 总结:
 
-> 设计 class 就像设计 type 一样, 在定义新的 type 前, 请考虑本条款覆盖的所有讨论主题
+- 设计 class 就像设计 type 一样, 在定义新的 type 前, 请考虑本条款覆盖的所有讨论主题
 
 ### 20 宁以 pass-by-reference-to-const 替换 pass-by-value
 
@@ -988,8 +991,8 @@ void printNameAndDisplay(const Window& w)  // 正确
 
 总结:
 
-> 尽量以 pass-by-reference-to-const 替换 pass-by-value, 前者通常比较高效, 并可避免切割问题
-> 以上规则并不适用于内置类型, STL 迭代器和函数对象, 对它们而言 pass-by-value 通常比较适当
+- 尽量以 pass-by-reference-to-const 替换 pass-by-value, 前者通常比较高效, 并可避免切割问题
+- 以上规则并不适用于内置类型, STL 迭代器和函数对象, 对它们而言 pass-by-value 通常比较适当
 
 ### 21 必须返回对象时, 别妄想返回 reference
 
@@ -1052,7 +1055,7 @@ const Rational operator*(const Rational& lhs, const Rational& rhs)
 
 总结:
 
-> 绝不要返回 pointer 或 reference 指向一个 local stack 对象, 或返回 reference 指向一个 heap-allocated 对象, 或返回 reference 指向一个 local static 对象而有可能同时需要多个这样的对象
+- 绝不要返回 pointer 或 reference 指向一个 local stack 对象, 或返回 reference 指向一个 heap-allocated 对象, 或返回 reference 指向一个 local static 对象而有可能同时需要多个这样的对象
 
 ### 22 将成员变量声明为 private
 
@@ -1064,8 +1067,8 @@ const Rational operator*(const Rational& lhs, const Rational& rhs)
 
 总结:
 
-> 将成员变量声明为 private, 以确保语法一致性, 可细微划分访问控制, 允诺约束条件获得保证, 并提供 class 作者以充分的实现弹性
-> protected 并不比 public 更具封装性
+- 将成员变量声明为 private, 以确保语法一致性, 可细微划分访问控制, 允诺约束条件获得保证, 并提供 class 作者以充分的实现弹性
+- protected 并不比 public 更具封装性
 
 ### 23 宁以 non-member, non-friend 替换 member 函数
 
@@ -1101,7 +1104,7 @@ namespace WebBrowserStuff {
 
 总结:
 
-> 宁可拿 non-member, non-friend 函数替换 member 函数, 以提升封装性, 包裹弹性, 机能扩充性
+- 宁可拿 non-member, non-friend 函数替换 member 函数, 以提升封装性, 包裹弹性, 机能扩充性
 
 ### 24 若所有参数皆需类型转换, 请为此采用 non-member 函数
 
@@ -1141,7 +1144,7 @@ const Rational operator*(const Rational& lhs, const Rational& rhs);
 
 总结:
 
-> 如果某个函数的所有参数 (包括被 this 指针所指的那个隐喻参数) 都需要类型转换, 那么它必须是个 non-member 函数
+- 如果某个函数的所有参数 (包括被 this 指针所指的那个隐喻参数) 都需要类型转换, 那么它必须是个 non-member 函数
 
 ### 25 考虑写出一个不抛异常的 swap 函数
 
@@ -1276,10 +1279,10 @@ void doSomething(T& lhs, T& rhs)
 
 总结:
 
-> 当 std::swap 对你的类型效率不高时, 提供一个 swap 成员函数, 并确定这个函数不抛出异常
-> 如果你提供一个 member swap 函数, 也提供一个 non-member swap 函数, 以调用 member swap 函数, 对于 class (非 template) 还要特化 std::swap
-> 调用 swap 时应针对 std::swap 使用 using 声明式, 然后调用 swap 并且不带任何 namespace 修饰符
-> 为 "用户定义类型" 进行 std templates 全特化是好的, 但是不要尝试在 std 内加入全新的东西
+- 当 std::swap 对你的类型效率不高时, 提供一个 swap 成员函数, 并确定这个函数不抛出异常
+- 如果你提供一个 member swap 函数, 也提供一个 non-member swap 函数, 以调用 member swap 函数, 对于 class (非 template) 还要特化 std::swap
+- 调用 swap 时应针对 std::swap 使用 using 声明式, 然后调用 swap 并且不带任何 namespace 修饰符
+- 为 "用户定义类型" 进行 std templates 全特化是好的, 但是不要尝试在 std 内加入全新的东西
 
 ## 5 实现
 
@@ -1331,7 +1334,7 @@ for (int i = 0; i < n; ++i) {
 
 总结:
 
-> 尽可能延后变量定义式的出现时间, 这样做可增加程序清晰度并改善程序效率
+- 尽可能延后变量定义式的出现时间, 这样做可增加程序清晰度并改善程序效率
 
 ### 27 尽量少做转型动作
 
@@ -1471,11 +1474,11 @@ for (VPW::iterator it = winPtrs.begin(); it != winPtrs.end(); ++it) {
 
 优良的 C++ 代码很少使用转型, 但是完全避免也不现实, 应该尽可能隔离转型, 通常是把它隐藏在某个函数内, 从而使用函数接口保护代码
 
-总结:
+#### 总结
 
-> 尽量避免转型, 特别是在注重效率的代码中避免 dynamic_cast, 如果转型是必要的试着进行替代设计
-> 如果转型是必要的, 试着将它隐藏在某个函数背后
-> 使用 C++-style cast 而不是 old-style cast
+- 尽量避免转型, 特别是在注重效率的代码中避免 dynamic_cast, 如果转型是必要的试着进行替代设计
+- 如果转型是必要的, 试着将它隐藏在某个函数背后
+- 使用 C++-style cast 而不是 old-style cast
 
 ### 28 避免返回 handles 指向对象内部成分
 
@@ -1488,7 +1491,7 @@ for (VPW::iterator it = winPtrs.begin(); it != winPtrs.end(); ++it) {
 
 总结:
 
-> 避免返回 handles (包括 reference, 指针, 迭代器) 指向函数内部, 遵守该条款可增加封装性, 帮助 const 成员函数的行为一致, 并将发生 dangling handles 的可能性降至最低
+- 避免返回 handles (包括 reference, 指针, 迭代器) 指向函数内部, 遵守该条款可增加封装性, 帮助 const 成员函数的行为一致, 并将发生 dangling handles 的可能性降至最低
 
 ### 29 为 "异常安全" 而努力是值得的
 
@@ -1511,9 +1514,9 @@ for (VPW::iterator it = winPtrs.begin(); it != winPtrs.end(); ++it) {
 
 总结:
 
-> 异常安全函数即使发生异常也不会泄漏资源或者允许任何数据结构损坏, 它有三种可能的保证: 基本, 强烈, 不抛异常
-> 强烈保证往往可以通过 copy and swap 实现, 但是强烈保证并非对所有函数都可实现或具备显示意义
-> 函数提供的异常安全性通常最高只等于所调用之各个函数的异常安全保证的最弱者
+- 异常安全函数即使发生异常也不会泄漏资源或者允许任何数据结构损坏, 它有三种可能的保证: 基本, 强烈, 不抛异常
+- 强烈保证往往可以通过 copy and swap 实现, 但是强烈保证并非对所有函数都可实现或具备显示意义
+- 函数提供的异常安全性通常最高只等于所调用之各个函数的异常安全保证的最弱者
 
 ### 30 透彻了解 inline 的里里外外
 
@@ -1549,8 +1552,8 @@ inline 函数通常一定置于头文件中, 因为大多数建制环境在编�
 
 总结:
 
-> 将大多数 inline 函数限制在小型, 被频繁调用的函数上, 这可使日后的调试和二进制升级更容易, 也可使潜在的代码膨胀问题最小化, 程序速度提升机会最大化
-> 不要因为 finction templates 出现在头文件就将它们声明为 inline
+- 将大多数 inline 函数限制在小型, 被频繁调用的函数上, 这可使日后的调试和二进制升级更容易, 也可使潜在的代码膨胀问题最小化, 程序速度提升机会最大化
+- 不要因为 finction templates 出现在头文件就将它们声明为 inline
 
 ### 31 将文件间的编译依存关系降至最低
 
@@ -1653,8 +1656,8 @@ Handle classes 和 Interface classes 解除了接口和实现之间的依赖关�
 
 总结:
 
-> 支持编译依存性最小化的一般构想是: 相依于声明式而非定义式, 基于此构想的具体手段包括 Handle classes 和 Interface classes
-> 程序库头文件应该以完全且仅有声明式 (full and declaration-only forms) 的形式存在, 不管是否涉及 templates
+- 支持编译依存性最小化的一般构想是: 相依于声明式而非定义式, 基于此构想的具体手段包括 Handle classes 和 Interface classes
+- 程序库头文件应该以完全且仅有声明式 (full and declaration-only forms) 的形式存在, 不管是否涉及 templates
 
 ## 6 继承与面向对象设计
 
@@ -1672,7 +1675,7 @@ is-a 并非存在于 class 之间唯一的关系, 还有 has-a (持有) 关系�
 
 总结:
 
-> public 继承意味着 is-a 关系, 适用于 Base class 的所有事物都能施于 Derived class, 因为每一个 Derived class 对象也是一个 Base class 对象
+- public 继承意味着 is-a 关系, 适用于 Base class 的所有事物都能施于 Derived class, 因为每一个 Derived class 对象也是一个 Base class 对象
 
 ### 33 避免遮掩继承而来的名称
 
@@ -1770,8 +1773,8 @@ public:
 
 总结:
 
-> derived class 内的名称会遮掩 base class 内的名称, 这和 public 继承的期望不符
-> 为了让 base class 内的名称在 derived class 内可见, 可以使用 using 声明式或转交函数
+- derived class 内的名称会遮掩 base class 内的名称, 这和 public 继承的期望不符
+- 为了让 base class 内的名称在 derived class 内可见, 可以使用 using 声明式或转交函数
 
 ### 34 区分接口继承和实现继承
 
@@ -1838,10 +1841,10 @@ public:
 
 总结:
 
-> 区分接口继承和实现继承, 在 public 继承下, derived class 总是继承 base class 的接口
-> pure virtual 函数只具体指定接口继承
-> 简朴的 (非纯) impure virtual 函数具体指定接口继承和缺省实现继承
-> non-virtual 函数具体指定接口继承和强制性实现继承
+- 区分接口继承和实现继承, 在 public 继承下, derived class 总是继承 base class 的接口
+- pure virtual 函数只具体指定接口继承
+- 简朴的 (非纯) impure virtual 函数具体指定接口继承和缺省实现继承
+- non-virtual 函数具体指定接口继承和强制性实现继承
 
 ### 35 考虑 virtual 函数以外的其他选择
 
