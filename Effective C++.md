@@ -1783,7 +1783,7 @@ public:
 - 成员函数的接口总是会继承
 - 声明一个 pure virtual 函数的目的是为了让 derived class 只继承函数接口
 - 声明一个简朴的 (非纯) impure virtual 函数的目的是为了让 derived class 继承该函数接口和缺省实现
-- 声明一个 non-virtual 函数的目的是为了让 derived class 继承该函数的接口和强制性实现
+- 声明一个 non-virtual 函数的目的是为了让 derived class 继承该函数的接口和强制性实现, 这代表函数的不变性凌驾于特异性
 
 为了避免 derived class 缺省继承 impure virtual 函数可以将 virtual 函数改为 pure virtual 函数同时在 Base class 中提供缺省实现, 为了继承该实现 derived class 可以使用一个 inline 函数调用实现
 
@@ -1986,3 +1986,34 @@ private:
 - virtual 函数的替代方案包括 NVI 手法及 *Strategy* 设计模式的多种形式, NVI 手法自身是一个特殊形式的 *Template Method* 模式
 - 将功能从成员函数移到 class 外部函数带来的一个缺点是非成员函数无法访问 class 的 non-public 成员
 - std::function 对象的行为就像一般函数指针, 这样的对象可以容纳与给定的目标签名式兼容的任何可调用物
+
+### 36 绝不重新定义继承而来的 non-virtual 函数
+
+由于 non-virtual 函数是静态绑定的, 而 virtual 函数是动态绑定的, 所以下面的代码中通过不同的指针 (或引用) 调用同一个对象的同一个函数会产生不同的结果, 而不管是条款 32 中的 is-a 关系还是条款 34 中的不变性凌驾于特异性的讨论都认为这种情况不该发生:
+
+```cpp
+class Base {
+public:
+    void mf() { ... }
+    ...
+};
+
+// 重新定义 non-virtual 函数
+class Derived : public Base {
+public:
+    void mf() { ... }
+    ...
+};
+
+Derived x;
+
+Base* pb = &x;
+pb->mf(); // 调用 Base::mf
+
+Derived* pd = &x;
+pd->mf(); // 调用 Derived::mf
+```
+
+总结:
+
+- 绝不重新定义继承而来的 non-virtual 函数
