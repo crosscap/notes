@@ -2017,3 +2017,49 @@ pd->mf(); // 调用 Derived::mf
 总结:
 
 - 绝不重新定义继承而来的 non-virtual 函数
+
+### 37 绝不重新定义继承而来的缺省参数值
+
+由于仅可以重新定义 virtual 函数所以本章等价为 "绝不重新定义继承而来的 virtual 函数的缺省参数值", 原因在于 virtual 函数的缺省参数值是静态绑定的, 而 virtual 函数是动态绑定的
+
+```cpp
+class Shape {
+public:
+    enum ShapeColor { Red, Green, Blue };
+    virtual void draw(ShapeColor color = Red) const = 0;
+    ...
+};
+
+class Rectangle : public Shape {
+public:
+    virtual void draw(ShapeColor color = Green) const;
+    ...
+};
+
+Rectangle r;
+Shape* ps = &r; // 静态类型为 Shape*, 动态类型为 Rectangle*
+ps->draw(); // 调用 Rectangle::draw, 但是参数值为 Red
+```
+
+利用 NVI 手法可以避免这个问题, 通过将缺省参数值放入 non-virtual 函数中, 然后调用 virtual 函数, 由于 non-virtual 函数不能被重新定义, 所以 virtual 函数的缺省参数值也就不会被重新定义
+
+```cpp
+class Shape {
+public:
+    enum ShapeColor { Red, Green, Blue };
+    void draw(ShapeColor color = Red) const { doDraw(color); }
+    ...
+private:
+    virtual void doDraw(ShapeColor color) const = 0;
+};
+
+class Rectangle : public Shape {
+public:
+    virtual void doDraw(ShapeColor color) const;
+    ...
+};
+```
+
+总结:
+
+- 绝不重新定义继承而来的缺省参数值, 因为缺省参数值是静态绑定的, 而 virtual 函数是动态绑定的
