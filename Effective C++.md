@@ -2063,3 +2063,45 @@ public:
 总结:
 
 - 绝不重新定义继承而来的缺省参数值, 因为缺省参数值是静态绑定的, 而 virtual 函数是动态绑定的
+
+### 38 通过复合塑模出 has-a 或 "根据某物实现出" 关系
+
+当某种类型的对象内含它种类型的对象时, 这种关系被称为复合 (composition), 例如:
+
+复合还有一些同义词, 包括 layering (分层), containment (包含), aggregation (聚合) 和 embedding (内嵌)
+
+复合意味着 has-a 关系或者 is-implemented-in-terms-of (根据某物实现出) 关系, 当复合发生于应用域 (application domain) 的对象之间时, 通常是 has-a 关系, 当复合发生于实现域 (implementation domain) 的对象之间时, 通常是 is-implemented-in-terms-of 关系
+
+```cpp
+class Address { ... };
+class PhoneNumber { ... };
+class Person {  // 复合, has-a 关系
+public:
+    ...
+private:
+    std::string name;
+    Address addr;
+    PhoneNumber phone;
+};
+```
+
+当利用 list 实现 set 时表现出 is-implemented-in-terms-of 关系而非 is-a 和 has-a 关系:
+
+```cpp
+template <typename T>
+class Set {
+public:
+    bool member(const T& item) const;
+    void insert(const T& item);
+    void remove(const T& item);
+    std::size_t size() const;
+    ...
+private:
+    std::list<T> rep;   // 复合, is-implemented-in-terms-of 关系
+};
+```
+
+总结:
+
+- 复合的意义和 public 继承完全不同
+- 在应用域中, 复合表示 has-a 关系, 在实现域中, 复合表示 is-implemented-in-terms-of 关系
