@@ -1848,7 +1848,7 @@ public:
 
 ### 35 考虑 virtual 函数以外的其他选择
 
-### 使用 virtual 函数
+#### 使用 virtual 函数
 
 ```cpp
 class GameCharacter {
@@ -2105,3 +2105,23 @@ private:
 
 - 复合的意义和 public 继承完全不同
 - 在应用域中, 复合表示 has-a 关系, 在实现域中, 复合表示 is-implemented-in-terms-of 关系
+
+### 39 明智而审慎地使用 private 继承
+
+private 继承的行为特点:
+
+- dierived class 不会被自动转换为 base class
+- 从 private 继承的所有成员在 derived class 中都会变为 private
+
+private 继承意味着 is-implemented-in-terms-of (根据某物实现出) 关系, 也就是只继承实现而不继承接口, 而这与复合有相同的含义, 但建议尽量使用复合而非 private 继承, 只有当需要访问 protected 成员和/或需要重新定义一个或多个 virtual 的时候或者在很激进的情况下节省空间才使用 private 继承, 原因如下:
+
+- privete 复合可以阻止 derived class 修改接口
+- 降低编译依存性
+- 复合更加容易理解
+
+很激进的情况下节省空间指的是处理的 class 不带任何数据时 (没有 non-static 成员变量, 没有 virtual 函数, 没有 virtual base classes), 这时使用复合由于 C++ 要求独立 (非附属) 对象的大小一定不为 0, 所以使用单一 private 继承可以节省空间, 这称为 EBO (Empty Base Optimization; 空白基类最优化), 但这种情况很少见
+
+总结:
+
+- private 继承意味着 is-implemented-in-terms-of (根据某物实现出) 关系, 它通常比复合的级别低, 但是当 derived class 需要访问 protected 成员或者重新定义继承的 virtual 函数时, private 继承是合适的选择
+- 和复合相比, private 继承可以形成 empty base class 最优化, 这对某些开发者而言可能很重要
