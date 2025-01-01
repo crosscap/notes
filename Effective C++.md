@@ -2119,9 +2119,95 @@ private 继承意味着 is-implemented-in-terms-of (根据某物实现出) 关�
 - 降低编译依存性
 - 复合更加容易理解
 
+但是要注意, 当需要重新定义 virtual 函数时, 复合也可以实现, 只是代码稍显复杂
+
 很激进的情况下节省空间指的是处理的 class 不带任何数据时 (没有 non-static 成员变量, 没有 virtual 函数, 没有 virtual base classes), 这时使用复合由于 C++ 要求独立 (非附属) 对象的大小一定不为 0, 所以使用单一 private 继承可以节省空间, 这称为 EBO (Empty Base Optimization; 空白基类最优化), 但这种情况很少见
 
 总结:
 
 - private 继承意味着 is-implemented-in-terms-of (根据某物实现出) 关系, 它通常比复合的级别低, 但是当 derived class 需要访问 protected 成员或者重新定义继承的 virtual 函数时, private 继承是合适的选择
 - 和复合相比, private 继承可以形成 empty base class 最优化, 这对某些开发者而言可能很重要
+
+### 40 明智而审慎地使用多重继承
+
+多重继承 (multiple inheritance; MI) 在 C++ 社群内的看法不一, 本节将介绍两方面的观点
+
+首先要注意的是, MI 会导致较多的歧义 (ambiguity) 机会, 例如:
+
+```cpp
+class BorrowableItem {
+public:
+    void checkOut() { ... }
+    ...
+};
+
+class ElectronicGadget {
+private:
+    bool checkOut() { ... }
+    ...
+};
+
+class MP3Player :
+    public BorrowableItem,
+    public ElectronicGadget
+{
+    ...
+};
+
+MP3Player mp;
+mp.checkOut();                  // 歧义
+mp.BorrowableItem::checkOut();  // 明确
+```
+
+多重继承时要注意不要让继承的 base classes 有相同的更高级的 base class, 这样会导致 "钻石型多重继承问题":
+
+```cpp
+class File { ... };
+class InputFile : public File { ... };
+class OutputFile : public File { ... };
+class IOFile :
+    public InputFile,
+    public OutputFile { ... };
+```
+
+继承图如下:
+
+```mermaid
+classDiagram
+    File <|-- InputFile
+    File <|-- OutputFile
+    InputFile  <|-- IOFile
+    OutputFile <|-- IOFile
+```
+
+这样会导致问题: IOFile 应该有 File 的 2 个成员变量还是 1 个成员变量? C++ 对两个情况都有支持, 而进行复制是缺省做法 (即有 2 个成员变量), 而如果希望各个 base classes 共享更高级的 base class, 那么在这个带数据的 base class 要成为 virtual base class
+
+```cpp
+class File { ... };
+class InputFile : virtual public File { ... };
+class OutputFile : virtual public File { ... };
+class IOFile :
+    public InputFile,
+    public OutputFile { ... };
+```
+
+继承图如下:
+
+```mermaid
+classDiagram
+    File <|.. InputFile
+    File <|.. OutputFile
+    InputFile  <|-- IOFile
+    OutputFile <|-- IOFile
+```
+
+从正确性的角度来看 public 继承总应该是 virtual 的, 但是 virtual 继承会导致 class 的体积增大, 访问成员变量的运行速度变慢, 初始化的过程也更加复杂, 所以在使用 virtual 继承时要遵循以下建议:
+
+- 除非绝对必要, 否则不要使用 virtual 继承
+- 必须使用 virtual 继承时避免在其中放置数据
+
+总结:
+
+- 多重继承比单一继承更复杂, 他可能导致歧义性和对 virtual 继承的需求
+- virtual 继承会增加大小, 速度, 初始化 (和赋值) 复杂度等成本, 所以 virtual base class 最好不要包含数据
+- 多重继承的一个合理用途是 public 继承接口而 private 继承实现的结合
