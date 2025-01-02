@@ -2211,3 +2211,13 @@ classDiagram
 - 多重继承比单一继承更复杂, 他可能导致歧义性和对 virtual 继承的需求
 - virtual 继承会增加大小, 速度, 初始化 (和赋值) 复杂度等成本, 所以 virtual base class 最好不要包含数据
 - 多重继承的一个合理用途是 public 继承接口而 private 继承实现的结合
+
+## 7 模板与泛型编程
+
+### 41 了解隐式接口和编译期多态
+
+总结:
+
+- classes 和 templates 都支持接口 (interface) 和多态 (polymorphism)
+- 对 classes 而言, 接口是显式 (explicit) 的, 以函数签名为中心, 多态则是通过 virtual 函数发生于运行期 (runtime)
+- 对 templates 而言, 接口是隐式 (implicit) 的, 以有效表达式 (valid expressions) 为中心, 多态则是通过 template 实例化和函数重载解析 (function overloading resolution) 发生于编译期 (compile-time)
