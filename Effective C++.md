@@ -2221,3 +2221,48 @@ classDiagram
 - classes 和 templates 都支持接口 (interface) 和多态 (polymorphism)
 - 对 classes 而言, 接口是显式 (explicit) 的, 以函数签名为中心, 多态则是通过 virtual 函数发生于运行期 (runtime)
 - 对 templates 而言, 接口是隐式 (implicit) 的, 以有效表达式 (valid expressions) 为中心, 多态则是通过 template 实例化和函数重载解析 (function overloading resolution) 发生于编译期 (compile-time)
+
+### 42 了解 typename 的双重意义
+
+在 template 声明中 class 和 typename 完全相同, 但是 typename 还有其他用法:
+
+```cpp
+// same
+template <typename T> class Widget;
+template <class T> class Widget;
+```
+
+typename 内出现的名称如果相依于某个 template 参数, 称之为从属名称 (dependent names), 如果从属名称在 class 内呈嵌套状则称之为嵌套从属名称 (nested dependent names), 而如果嵌套从属名称指的是某一类型则称之为嵌套从属类型名称 (nested dependent type names), 而不依靠任何 template 参数的名称称之为非从属名称 (non-dependent names)
+
+嵌套从属名称可能导致解析困难, 所以默认情况下编译器会认为嵌套从属名称是一个对象, 所以对于嵌套从属类型名称需要使用 typename 关键字, 只有后面提到的例外除外:
+
+```cpp
+template <typename C>
+void print2nd(const C& container)
+{
+    if (container.size() >= 2) {
+        // C::const_iterator iter(container.begin());       // 错误
+        typename C::const_iterator iter(container.begin()); // 正确
+        ++iter;
+        int value = *iter;
+        ...
+    }
+}
+```
+
+需要注意的是不是嵌套从属类型名称的情况下不需要使用 typename 关键字, typename 也不可以出现在 base classes list (基类列表) 内的嵌套从属类型名称前, 也不可以在 member initialization list (成员初始化列表) 内作为 base class 的修饰符
+
+```cpp
+template <typename T>
+class Derived : public Base<T>::Nested {            // don't need typename
+public:
+    explicit Derived(int x) : Base<T>::Nested(x) {  // don't need typename
+        typename Base<T>::Nested temp;              // need typename
+    }
+};
+```
+
+总结:
+
+- 声明 template 参数时, 前缀关键字 class 和 typename 可互换
+- 使用关键字 typename 标识嵌套从属类型名称, 但是不要在 base classes list 或者 member initialization list 以它作为 base class 的修饰符
