@@ -2266,3 +2266,15 @@ public:
 
 - 声明 template 参数时, 前缀关键字 class 和 typename 可互换
 - 使用关键字 typename 标识嵌套从属类型名称, 但是不要在 base classes list 或者 member initialization list 以它作为 base class 的修饰符
+
+### 43 学习处理模板化基类内的名称
+
+由于全特化的存在, 编译器往往拒绝在 templatized base class (模板化基类) 内查找继承而来的名称, 有三种办法令这种行为失效:
+
+- 在 base class 函数调用动作之前加上 this->
+- 使用 using 声明式
+- 明白指出被调用的函数位于 base class 内, 但这样会导致 virtual 函数的多态性失效
+
+总结:
+
+- 可在 derived class templates 内通过 this-> 指涉 base class templates 内的成员名称, 或者藉由一个明白写出的 "base class 资格修饰符" 完成 (using 声明式或者指出函数位于 base class 内)
