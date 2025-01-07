@@ -2278,3 +2278,58 @@ public:
 总结:
 
 - 可在 derived class templates 内通过 this-> 指涉 base class templates 内的成员名称, 或者藉由一个明白写出的 "base class 资格修饰符" 完成 (using 声明式或者指出函数位于 base class 内)
+
+### 44 将与参数无关的代码抽离 templates
+
+为了避免代码膨胀 (code bloat), 需要进行共性与变性分析 (commonality and variability analysis), 也就是将存在共性的部分使用函数, 继承, 组合等方法抽离出来, 留下变性的部分, 但 template 的共性和变性和 non-template 相比不明显, 所以需要进行更加细致的分析
+
+```cpp
+template <typename T, std::size_t N>
+class SquareMatrix {
+public:
+    ...
+    void invert();
+};
+```
+
+这个例子中不同的 N 将导致代码膨胀, 所以可以将 invert 函数抽离出来; 为了让 SquareMatrixBase::invert 知道操作什么数据可以让 SquareMatrixBase 存储一个指向数据的指针或者使用函数参数传递数据指针; derived class 则可以选择存储数据的方式
+
+```cpp
+template <typename T>
+class SquareMatrixBase {
+protected:
+    SquareMatrixBase(std::size_t n, T* pMem) : size(n), pData(pMem) { }
+    void setDataPtr(T* ptr) { pData = ptr; }
+    ...
+    void invert(std::size_t matrixSize);
+private:
+    std::size_t size;
+    T* pData;   // 指向数据的指针
+};
+
+template <typename T, std::size_t N>
+class SquareMatrix : private SquareMatrixBase<T> {
+public:
+    SquareMatrix() : SquareMatrixBase<T>(N, 0), data(new T[N * N]) { this->setDataPtr(data.get()); }
+    ...
+    void invert() { this->invert(N); }
+private:
+    boost::scoped_array<T> data;
+};
+```
+
+使用 this 调用 invert 函数是因为在 templatized base class (模板化基类) 内查找继承而来的名称时编译器往往拒绝, 详见条款 43; 使用 private 继承是因为 base class 只是为了帮助 derived class 实现, 是 is-implemented-in-terms-of (根据某物实现出) 关系, 详见条款 39
+
+但是要注意以上改变和原版比互有优劣, 原版代码可能通过常量广传等方法达到最优化而共享版本可能降低执行文件大小从而降低 working set [^working_set] 大小, 从而强化高速缓存内的引用集中化, 二者哪个更优取决于具体情况
+
+[^working_set]: 在虚内存环境内执行的进程所使用的内存页的集合
+
+对象的大小是另外需要关注的问题, 这与封装性相关
+
+本条款只和 non-type template parameters (非类型模板参数) 有关, 但 type template parameters (类型模板参数) 也可能导致代码膨胀, 如 int 和 long 也许有相同的二进制描述却可能生成不同的实例化代码, 强型指针 (strongly typed pointers 即 T\*)也可能导致代码膨胀, 所以应该让它们调用无类型指针 (untyped pointers 即 void\*) 的函数完成实际工作
+
+总结:
+
+- Templates 生成多个 class 和多个函数, 所以任何 templates 代码都不应该与某个造成膨胀的 templates 参数产生相依关系
+- 因非类型模板参数导致的代码膨胀可以消除, 做法是通过用函数参数或 class 成员变量替换 template 参数
+- 因类型模板参数导致的代码膨胀可以降低 做法是让带有完全相同二进制表述的具现类型共享实现代码
