@@ -2333,3 +2333,35 @@ private:
 - Templates 生成多个 class 和多个函数, 所以任何 templates 代码都不应该与某个造成膨胀的 templates 参数产生相依关系
 - 因非类型模板参数导致的代码膨胀可以消除, 做法是通过用函数参数或 class 成员变量替换 template 参数
 - 因类型模板参数导致的代码膨胀可以降低 做法是让带有完全相同二进制表述的具现类型共享实现代码
+
+### 45 运用成员函数模板接受所有兼容类型
+
+如果不具体写出, 那么即使是具有继承关系的类通过模板产生的具现体之间也不能互相转换
+
+#### Templates 和泛型编程 (Generic Programming)
+
+通过模板构造函数可以实现可以实现任意类型的转换, 这种模板是所谓 member function templates (成员函数模板), 而这类构造函数被称为泛化 (generalized) copy 构造函数
+
+为防止模板产生不期望的行为, 可以在模板中使用某些成员函数约束转换行为
+
+```cpp
+template <typename T>
+class SmartPtr {
+public:
+    template <typename U>
+    SmartPtr(const SmartPtr<U>& other) : heldPtr(other.get()) { ... }
+    T* get() const { return heldPtr; }
+    ...
+private:
+    T* heldPtr;
+};
+```
+
+member function templates (成员函数模板) 除了构造函数还可以用于支持赋值操作
+
+需要注意的是在 class 内声明泛化 copy 构造函数 (是 member template) 并不会阻止编译器生成类自己的 copy 构造函数 (non-template), 赋值操作也是如此, 所以如果希望额外控制类的 copy 构造函数和赋值操作, 需要自己声明
+
+总结:
+
+- 请使用 member function templates (成员函数模板) 生成 "可接受所有兼容类型" 的函数
+- 如果声明 member templates 用于泛化 copy 构造函数或赋值操作, 还是需要声明正常的 copy 构造函数和赋值操作
