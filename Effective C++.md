@@ -2365,3 +2365,56 @@ member function templates (成员函数模板) 除了构造函数还可以用于
 
 - 请使用 member function templates (成员函数模板) 生成 "可接受所有兼容类型" 的函数
 - 如果声明 member templates 用于泛化 copy 构造函数或赋值操作, 还是需要声明正常的 copy 构造函数和赋值操作
+
+### 46 需要类型转换时请为模板定义非成员函数
+
+使用模板扩展条款 24 中的 Rational 类, 但由于 template 实参推导过程中不将通过构造函数发生的隐式转换考虑在内, 通过 templates class 内的 firend 函数可以指涉某个特定函数可以缓和上述的挑战, 但是需要注意的是此时无法将定义和实现分离, 否则无法通过链接
+
+注意 friend 函数中使用 template 名称作为 "template 和其参数" 的简写, 这在 class template 内部是合法的
+
+```cpp
+template <typename T>
+class Rational {
+public:
+    Rational(const T& numerator = 0, const T& denominator = 1); // Tips 20 说明了为什么这里使用 pass-by-reference
+    const T numerator() const;      // Tips 28 说明了为什么返回值使用 pass-by-value
+    const T denominator() const;    // Tips 03 说明为社么这里使用 const
+    ...
+
+    friend const Rational operator*(const Rational& lhs, const Rational& rhs)
+    {
+        return Rational(lhs.numerator() * rhs.numerator(), lhs.denominator() * rhs.denominator());
+    }
+};
+```
+
+如果不希望 firend 函数成为 inline 的, 可以让它调用一个外部辅助函数, 这样的话定义了 Rational 的头文件可能是这样的:
+
+```cpp
+template <typename T> class Rational;
+
+template <typename T>
+const Rational<T> doMultiply(const Rational<T>& lhs, const Rational<T>& rhs); // help function
+
+template <typename T>
+class Rational {
+public:
+    ...
+    friend const Rational operator*(const Rational& lhs, const Rational& rhs)
+    {
+        return doMultiply(lhs, rhs);
+    }
+};
+
+template <typename T>
+const Rational<T> doMultiply(const Rational<T>& lhs, const Rational<T>& rhs)
+{
+    return Rational<T>(lhs.numerator() * rhs.numerator(), lhs.denominator() * rhs.denominator());
+}
+```
+
+由于许多编译器要求把所有的 template 定义式写在头文件内, 所以上面把 doMultiply 定义在头文件内是合理的
+
+总结:
+
+- 当编写的 class template 提供的与此 class 相关的函数需要进行类型转换时, 请将这些函数定义为 "class template 内部的 friend 函数"
