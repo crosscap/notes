@@ -2418,3 +2418,30 @@ const Rational<T> doMultiply(const Rational<T>& lhs, const Rational<T>& rhs)
 总结:
 
 - 当编写的 class template 提供的与此 class 相关的函数需要进行类型转换时, 请将这些函数定义为 "class template 内部的 friend 函数"
+
+### 47 请使用 traits classes 表现类型信息
+
+为了让编译期间可以取得某些类型信息需要使用 traits 技术, 他要求对内置类型和用户自定义类型都能正常工作, 所以标准技术是把它放进一个 template 及其一个或多个特化版本中, 它往往是一个 struct, 但这个 template 被称为 traits class
+
+实现 traits class 的方法是:
+
+1. 确认若干希望将来可取得的类型相关信息
+2. 为该信息选择一个名称
+3. 提供一个 template 和一组特化版本, 内含希望支持的类型信息
+
+使用 traits class 的方法是:
+
+1. 建立一组重载函数或函数模板, 彼此之间的差异仅在于各自的 traits class 参数, 令每个函数的实现码和对应的 traits class 特化版本相互关联
+2. 建立一个控制函数或函数模板, 用于调用上述的重载函数或函数模板, 以及传递适当的 traits class 所提供的信息
+
+std 中的 traits class 有:
+
+- std::iterator_traits
+- std::char_traits
+- std::numeric_limits
+- std::allocator_traits
+- std::type_traits (C++11, 用于判断类型特性, 原位于 TR1)
+
+总结:
+- traits classes 使得类型相关信息在编译期间可用, 它们以 templates 和 template 特化完成实现
+- 整合重载技术后, traits classes 有可能在编译期对类型进行 if...else 测试
