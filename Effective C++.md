@@ -2445,3 +2445,39 @@ std 中的 traits class 有:
 总结:
 - traits classes 使得类型相关信息在编译期间可用, 它们以 templates 和 template 特化完成实现
 - 整合重载技术后, traits classes 有可能在编译期对类型进行 if...else 测试
+
+### 48 认识 template 元编程
+
+Template metaprogramming (TMP, 模板元编程) 是编写 template-based C++  程序并执行于编译期的过程, 有如下优点:
+
+- 让某些事情更容易
+- 将某些工作从运行期转移到编译期, 从而在编译期间发现错误, 也可以使生成的程序更加高效, 不过会导致编译时间变长
+
+Tips 47 中的 traits classes 是 TMP 的一个例子, Boost 中也有针对 TMP 的库, 例如 Boost's MPL
+
+TMP 中没有真正的循环构建所以需要使用递归, TMP 使用的是 "递归模板具现化" (recursive template instantiation), 下面是计算阶乘的例子:
+
+```cpp
+template <unsigned n>
+struct Factorial {
+    enum { value = n * Factorial<n - 1>::value };
+};
+
+template <>
+struct Factorial<0> {
+    enum { value = 1 };
+};
+```
+
+TMP 的作用:
+
+- 确保度量单位正确
+- 优化矩阵运算
+- 生成用户客制之设计模式 (design pattern) 实现品
+
+TMP 或许永远不会成为主流, 但是对某些程序员如程序库开发人员是重要工具
+
+总结:
+
+- 模板元编程 (TMP) 可将工作从运行期转移到编译期, 因而得以实现早期错误侦测和更高的执行效率
+- TMP 可被用来生成 "基于政策选择组合" 的客户定制代码, 也可以用来避免生成对某些特殊类型不适合的代码
