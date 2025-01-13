@@ -2481,3 +2481,130 @@ TMP 或许永远不会成为主流, 但是对某些程序员如程序库开发�
 
 - 模板元编程 (TMP) 可将工作从运行期转移到编译期, 因而得以实现早期错误侦测和更高的执行效率
 - TMP 可被用来生成 "基于政策选择组合" 的客户定制代码, 也可以用来避免生成对某些特殊类型不适合的代码
+
+## 8 定制 new 和 delete
+
+### 49 了解 new-handler 的行为
+
+当 operator new 无法满足内存需求时会抛出 std::bad_alloc 异常 (以前是返回 null 指针), 在抛出异常前会调用 new-handler 函数, 这是个用户通过调用 std::set_new_handler 注册的函数, 该函数的原型如下, 它将待注册的函数作为参数传入, 并返回被调用前使用的 new-handler 函数
+
+```cpp
+namespace std {
+    typedef void (*new_handler)();
+    new_handler set_new_handler(new_handler p) throw(); // 空白 throw() 表示不抛出异常
+}
+```
+
+当 operator new 无法满足内存需求时会不断调用 new-handler 函数, 直到找到足够的内存, 所以 new-handler 函数要考虑下面的事情:
+
+- 让更多内存可用
+- 安装另一个 new-handler
+- 卸除 new-handler
+- 抛出 std::bad_alloc (或其派生类) 异常
+- 不返回, 通常调用 abort 或 exit
+
+通过为 class 定义 operator new 和 set_new_handler 可以实现类专属的 new-handler 并且需要一个 static 成员变量来保存当前的 new-handler, set_new_handler 将获得的指针储存并返回此前储存的指针, operator new 则需要做下面的事情:
+
+1. 调用标准 set_new_handler, 告知 Widget 的错误处理函数, 这会将 Widget 的 new-handler 注册为 global new-handler
+2. 调用 global operator new, 以尝试满足 Widget 的内存需求, 如果分配失败则会调用刚刚安装的 new-handler, 如果 global operator new 最终无法分配内存, 则会抛出 std::bad_alloc 异常, 这时 Widget 的 operator new 需要恢复原本的 new-handler 并传播异常, 为防止资源泄漏可以将 global new-handler 视为资源并运用资源管理对象
+3. 如果 global operator new 成功分配内存, 则 Widget 的 operator new 返回一个指针指向分配所得, Widget 的析构函数会管理 global new-handler 将它被安装的 new-handler 恢复
+
+```cpp
+// Widget.h
+class Widget {
+public:
+    ...
+    static std::new_handler set_new_handler(std::new_handler p) throw();
+    static void* operator new(std::size_t size) throw(std::bad_alloc);
+
+private:
+    static std::new_handler currentHandler;
+};
+
+// Widget.cpp
+
+std::new_handler Widget::currentHandler = 0;
+
+std::new_handler Widget::set_new_handler(std::new_handler p) throw()
+{
+    std::new_handler oldHandler = currentHandler;
+    currentHandler = p;
+    return oldHandler;
+}
+
+void* Widget::operator new(std::size_t size) throw(std::bad_alloc)
+{
+    NewHandlerHolder h(std::set_new_handler(currentHandler));
+    return ::operator new(size);
+}
+
+// NewHandlerHolder.h
+class NewHandlerHolder {
+public:
+    explicit NewHandlerHolder(std::new_handler nh) : handler(nh) {}
+    ~NewHandlerHolder() { std::set_new_handler(handler); }
+
+private:
+    std::new_handler handler;
+    NewHandlerHolder(const NewHandlerHolder&);              // 防止 copying
+    NewHandlerHolder& operator=(const NewHandlerHolder&);   // 防止 assignment
+};
+```
+
+将设定 class 专属之 new-handler 的能力抽离为一个 mixin 风格的 base class 并转化为 templates 可以让其他类继承接口并保证每个实体使用不同的 currentHandler
+
+```cpp
+template <typename T>
+class NewHandlerSupport {
+public:
+    static std::new_handler set_new_handler(std::new_handler p) throw();
+    static void* operator new(std::size_t size) throw(std::bad_alloc);
+    ...
+
+private:
+    static std::new_handler currentHandler;
+};
+
+template <typename T>
+std::new_handler NewHandlerSupport<T>::set_new_handler(std::new_handler p) throw()
+{
+    std::new_handler oldHandler = currentHandler;
+    currentHandler = p;
+    return oldHandler;
+}
+
+template <typename T>
+void* NewHandlerSupport<T>::operator new(std::size_t size) throw(std::bad_alloc)
+{
+    NewHandlerHolder h(std::set_new_handler(currentHandler));
+    return ::operator new(size);
+}
+
+// 将 currentHandler 初始化为 null
+template <typename T>
+std::new_handler NewHandlerSupport<T>::currentHandler = 0;
+
+// Widget.h
+class Widget : public NewHandlerSupport<Widget> {
+public:
+    ...
+};
+```
+
+Widget 的这种继承方法被称为 curiously recurring template pattern (CRTP, 奇异递归模板模式), 可以把它理解为 Do it for me, 这种方法也很容易导致多重继承, 相关内容详见条款 40
+
+为兼容此前返回 null 指针的 operator new, 可以使用 nothrow 形式
+
+```cpp
+Widget* pw = new (std::nothrow) Widget;
+if (pw == 0) {
+    ...
+}
+```
+
+但是注意, 无法保证 Widget 的构造函数不抛出异常, 所以使用 nothrow new 只能保证 operator new 不抛掷异常, 所以没有必要使用 nothrow new
+
+总结:
+
+- set_new_handler 允许客户指定一个函数, 当 operator new 无法分配内存时会调用这个函数
+- nothrow new 是一个颇为局限的工具, 它适用于内存分配, 后继的构造函数调用可能会抛出异常
