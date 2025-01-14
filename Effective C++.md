@@ -2627,3 +2627,93 @@ if (pw == 0) {
 总结:
 
 - 有许多理由需要自定的 operator new 和 operator delete, 包括改善效能, 对 heap 运用错误进行调试, 收集 heap 使用信息
+
+### 51 编写 new 和 delete 时需固守常规
+
+operator new 的正常行为包括:
+
+- 返回正确的值: 如果分配成功则返回指向分配内存的指针, 如果分配失败则按照 Tips 49 中的方法处理, 并抛出一个 std::bad_alloc 异常
+- 内存不足时调用 new-handler: new-handler 是 nullptr 时直接抛出异常, 否则调用 new-handler 完成处理工作
+- 对付零内存需求的准备: 即使是要求 0 bytes 的内存也要返回一个合法的指针, 一般是把 0 bytes 当作 1 byte 处理
+- 避免掩盖正常形式的 operator new
+
+operator new 的伪码 (pseudocode) 如下:
+
+```cpp
+void* operator new(std::size_t size) throw(std::bad_alloc)
+{
+    using namespace std;
+    if (size == 0)  // 处理 0 bytes 的内存需求
+        size = 1;
+    while (true) {
+        if (void* mem = malloc(size))
+            return mem;
+        new_handler globalHandler = set_new_handler(0);
+        set_new_handler(globalHandler);     // 获得当前 new-handler
+        if (globalHandler)
+            (*globalHandler)();             // 调用 new-handler
+        else
+            throw bad_alloc();              // 如果没有 new-handler 则抛出异常
+    }
+}
+```
+
+注意其中有一个 set_new_handler(0) 的调用, 这是为了获得当前的 new-handler, 而且有无穷循环, new-handler 必须如 Tips 49 中所述那样处理来打破循环
+
+需要注意的是 operator new 会被 derived class 继承, 而 operator new 往往是为某大小特制的所以它很可能不适用于 derived class, 正确做法是增加一个内存申请量判断, 由于 C++ 要求非附属 (独立式) 对象的大小不为 0, 所以不必担心 `sizeof(Base) == 0` 的情况
+
+```cpp
+class Base {
+public:
+    static void* operator new(std::size_t size) throw(std::bad_alloc);
+    ...
+};
+
+class Derived : public Base { ... };
+
+void* Base::operator new(std::size_t size) throw(std::bad_alloc)
+{
+    if (size != sizeof(Base))
+        return ::operator new(size);
+    ...
+}
+```
+
+如果打算控制 class 专属的 array 内存分配行为, 需要重载 operator new[], 也就是 array new, 这时唯一能做的是分配一块未加工内存 (raw memory)
+
+对于 operator delete 只需要保证 C++ 的要求: 删除 null 指针永远安全, 下面是 operator delete 的伪码:
+
+```cpp
+void operator delete(void* rawMemory) throw()
+{
+    if (rawMemory == 0)
+        return;
+    free(rawMemory);
+}
+```
+
+member 版本也很简单, 只需要多加一个动作检查删除数量, 当 operator new 转交给 ::operator new 时, operator delete 也应该转交给 ::operator delete
+
+```cpp
+class Base {
+public:
+    static void operator delete(void* rawMemory, std::size_t size) throw();
+};
+
+void Base::operator delete(void* rawMemory, std::size_t size) throw() {
+    if (rawMemory == 0)
+        return;
+    if (size != sizeof(Base)) {
+        ::operator delete(rawMemory);
+        return;
+    }
+    free(rawMemory);
+}
+```
+
+如果基类的析构函数不是 virtual 的那么传递给 operator delete 的 size 可能是错误的
+
+总结:
+
+- operator new 内应该包含一个无穷循环, 并在其中尝试分配内存, 如果分配失败则调用 new-handler, 也应该有能力处理 0 bytes 的内存需求, Class 的专属版本还应该处理 "比正确大小更大的 (错误) 申请"
+- operator delete 内应该在收到 null 指针时不做任何事, Class 的专属版本还应该处理 "比正确大小更大的 (错误) 申请"
