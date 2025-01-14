@@ -2717,3 +2717,98 @@ void Base::operator delete(void* rawMemory, std::size_t size) throw() {
 
 - operator new 内应该包含一个无穷循环, 并在其中尝试分配内存, 如果分配失败则调用 new-handler, 也应该有能力处理 0 bytes 的内存需求, Class 的专属版本还应该处理 "比正确大小更大的 (错误) 申请"
 - operator delete 内应该在收到 null 指针时不做任何事, Class 的专属版本还应该处理 "比正确大小更大的 (错误) 申请"
+
+### 52 写了 placement new 也要写 placement delete
+
+对于 `Widget* pw = new Widget;` 需要调用两个函数: operator new 和 Widget 的构造函数, 而如果第二个函数抛出异常, 第一个函数得到的内存必须被释放, 这一任务在 C++ 运行期系统身上, 它调用 operator new 对应的 operator delete, 对于下面的正常签名式 (signature) 的 operator new 和 operator delete 这不成问题:
+
+```cpp
+// 正常 operator new
+void* operator new(std::size_t size) throw(std::bad_alloc);
+
+// 正常 operator delete
+void operator delete(void* rawMemory) throw();                      // global 作用域正常的签名式
+void operator delete(void* rawMemory, std::size_t size) throw();    // class 作用域典型的签名式
+```
+
+而如果 operator new 接受的参数除了 size 之外还有其他参数便称为 placement new, 特别有用的一个版本是接受一个指针指向对象该被构造之处, placement new 大多数情况下专指这种版本
+
+```cpp
+void* operator new(std::size_t size, void* pMemory) throw();
+```
+
+这个版本的 operator new 已被纳入 C++ 标准程序库, 位于 `<new>` 头文件内
+
+在上述发生异常的场景下, 运行期系统寻找参数个数和类型都匹配的 operator delete, 与 operator new 相似, 接受额外参数的 operator delete 称为 placement delete, 如果找不到对应的 placement delete, 运行期系统会什么都不做, 所以需要提供一个对应的 placement delete, 而调用 `delete pw;` 时会调用 Widget 的析构函数, 然后调用正常的 operator delete 而非对应的 placement delete
+
+注意成员函数的名称会掩盖外围作用域的同名函数, 需要使用 Tips 33 中的方法处理这个问题, 这里要注意的是缺省情况下 C++ 在 global 中提供下面的 operator new, 如果除了自定义的 operator new 还需要使用它们, 在使用 Tips 33 中的方法外还要建立 class 专属的对应 operator delete, 这些 operator delete 可以调用 global 版本的 operator delete 来提供平常的行为
+
+```cpp
+void* operator new(std::size_t) throw(std::bad_alloc);          // normal
+void* operator new(std::size_t, void*) throw();                 // placement
+void* operator new(std::size_t, const std::nothrow_t&) throw(); // nothrow
+```
+
+我们可以建立一个 base class 内含所有正常形式的 operator new 和 operator delete
+
+```cpp
+class StandardNewDeleteForms {
+public:
+    // normal
+    static void* operator new(std::size_t size) throw(std::bad_alloc)
+    {
+        return ::operator new(size);
+    }
+
+    static void operator delete(void* pMemory) throw()
+    {
+        ::operator delete(pMemory);
+    }
+
+    // placement
+    static void* operator new(std::size_t size, void* ptr) throw()
+    {
+        return ::operator new(size, ptr);
+    }
+
+    static void operator delete(void* pMemory, void* ptr) throw()
+    {
+        ::operator delete(pMemory, ptr);
+    }
+
+    // nothrow
+    static void* operator new(std::size_t size, const std::nothrow_t& nt) throw()
+    {
+        return ::operator new(size, nt);
+    }
+
+    static void operator delete(void* pMemory, const std::nothrow_t& nt) throw()
+    {
+        ::operator delete(pMemory, nt);
+    }
+};
+
+// use StandardNewDeleteForms
+class Widget : public StandardNewDeleteForms {
+public:
+    using StandardNewDeleteForms::operator new;
+    using StandardNewDeleteForms::operator delete;
+
+    // 自定义的 operator new 和 operator delete
+    static void* operator new(std::size_t size, std::ostream& logStream) throw(std::bad_alloc)
+    {
+        ...
+    }
+
+    static void operator delete(void* pMemory, std::ostream& logStream) throw()
+    {
+        ...
+    }
+    ...
+};
+```
+
+总结:
+
+- 当你写了一个 placement new 时, 请确定你也写了对应的 placement delete, 否则可能发生资源泄漏
+- 当你声明 placement new 和 placement delete 时, 请确定不要无意识地遮掩它们的正常版本
