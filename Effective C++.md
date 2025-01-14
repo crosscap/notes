@@ -2812,3 +2812,77 @@ public:
 
 - 当你写了一个 placement new 时, 请确定你也写了对应的 placement delete, 否则可能发生资源泄漏
 - 当你声明 placement new 和 placement delete 时, 请确定不要无意识地遮掩它们的正常版本
+
+## 9 杂项讨论
+
+### 53 不要轻易忽视编译器的警告
+
+总结:
+
+- 严肃对待编译器的警告信息, 努力在编译器最严苛的警告级别下争取无任何警告的编译
+- 不要过度依赖编译器的警告信息, 因为不同编译器的警告信息不同
+
+### 54 让自己熟悉包括 TR1 在内的标准程序库
+
+注: TR1 是 "Technical Report 1", C++ 标准委员会在此描述一些新的标准库组件, 这些组件大部分在 C++11 中被纳入标准库
+
+C++98 中加入的标准库组件:
+
+- STL (Standard Template Library, 标准模板库): 覆盖容器 (container), 迭代器 (iterator), 算法 (algorithm), 函数对象 (function object), 容器适配器 (container adapter), 函数对象适配器 (function object adapter)
+- Iostreams: 覆盖用户自定义缓冲功能, 国际化IO, 以及预先定义好的对象如 cin, cout, cerr, clog
+- 国际化支持: 覆盖多区域能力, 如 wchar_t 和 wstring
+- 数值处理
+- 异常阶层体系
+- C89 标准程序库
+
+本书中 TR1 中加入的标准库组件 (C++11 中已经纳入标准库):
+
+- 智能指针 std::shared_ptr, std::weak_ptr, std::unique_ptr
+- std::function
+- std::bind
+
+其他的 TR1 新特性 (与 Template 无关):
+
+- hash table
+- 正则表达式
+- Tuples
+- std::array
+- std::mem_fn
+- std::reference_wrapper
+- 随机数生成工具
+- 数学特殊函数 (未纳入 C++11 标准库, 在 C++17 中纳入)
+- C99 兼容扩充
+
+其他的 TR1 新特性 (与 Template 有关):
+
+- Type traits
+- std::result_of
+
+文中建议通过 Boost 获得 TR1-like 的实现, 但使用 C++11 的话, 可以直接使用 C++11 标准库
+
+总结:
+
+- C++ 标准程序库的主要机能由 STL, Iostreams, locales 组成, 并包含 C99 标准程序库
+- TR1 (C++11) 添加了智能指针, 一般化函数指针, hash table, 正则表达式, Tuples 等新特性
+- TR1 自身只是一份规范, 为获得来源可以使用 Boost, 但是 C++11 中已经将 TR1 的大部分内容纳入标准库
+
+### 55 让自己熟悉 Boost
+
+Boost 是一个由 C++ 标准委员会成员发起的一个开源社区, 旨在提供 C++ 标准库的扩展, 以及对 C++ 标准库的实现, 包括下面的内容:
+
+- 字符串与文本处理
+- 容器
+- 函数对象和高级编程
+- 泛型编程
+- 模板元编程
+- 数字和数值
+- 正确性与测试
+- 数据结构
+- 语言间的支持
+- 内存
+- 杂项
+
+总结:
+
+- Boost 是一个开源社区, 也是一个网站, 致力于免费, 源码开放, 同僚复审的 C++ 程序库开发, 在 C++ 标准化进程中发挥了重要作用
+- Boost 提供了许多 C++ 标准库的扩展, 以及对 C++ 标准库的实现
