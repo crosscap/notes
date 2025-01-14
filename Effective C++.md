@@ -2608,3 +2608,22 @@ if (pw == 0) {
 
 - set_new_handler 允许客户指定一个函数, 当 operator new 无法分配内存时会调用这个函数
 - nothrow new 是一个颇为局限的工具, 它适用于内存分配, 后继的构造函数调用可能会抛出异常
+
+### 50 了解 new 和 delete 的合理替换时机
+
+替换 operator new 和 operator delete 的原因有:
+
+- 检测运用上的错误
+- 强化效能
+  - 增加分配和归还的速度
+  - 降低缺省内存管理器带来的额外空间开销
+  - 弥补缺省内存管理器中的非最佳齐位 (suboptimal alignment)
+  - 将相关对象成簇集中
+  - 获得非传统的行为
+- 收集使用上的统计资料
+
+由于各种各样的技术细节问题 (如内存对齐等), 一般不建议替换 operator new 和 operator delete, 可行的替代是查看编译器是否可切换不同的状态满足需求, 购买某些商业产品并重新链接也是一个选择, 开放源码领域中的内存管理器如 Boost.Pool 也可以考虑
+
+总结:
+
+- 有许多理由需要自定的 operator new 和 operator delete, 包括改善效能, 对 heap 运用错误进行调试, 收集 heap 使用信息
