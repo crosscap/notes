@@ -67,6 +67,8 @@
 - **vector作为标准关联容器的替代** .
 - **几种标准的非STL容器** : 包括数组、bitset、valarray、stack、queue和priority_queue.
 
+注意: 在C++11中, array、bitset、stack、queue、priority_queue和散列容器已经被标准化, 散列容器的名字与被标准化之前的非标准散列容器不同, 分别是unordered_set, unordered_multiset, unordered_map 和 unordered_multimap (原先是hash_set, hash_multiset, hash_map 和 hash_multimap)。
+
 #### STL容器的一种分类方法
 
 - 连续内存容器 (基于数组的容器)
@@ -222,6 +224,8 @@ list<int> data(istream_iterator<int>(dataFile), istream_iterator<int>());
 ```cpp
 list<int> data((istream_iterator<int>(dataFile)), istream_iterator<int>());
 ```
+
+注意：在C++11中开始支持的的{}初始化可以帮助避免这个问题。
 
 使用 istream_iterator 和区间构造函数时, 注意到这一点是有益的.
 
